@@ -1,0 +1,9 @@
+{
+  "name": "lens-meterless-world-model",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-transform-types --test test/*.test.ts",
+    "proof": "node --experimental-transform-types proof.ts"
+  }
+}

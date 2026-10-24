@@ -1,0 +1,5 @@
+claim_id,grant,kind,source_id,quantity,unit,description
+A-TIME-1,Reading Futures,staff_time,TS-101,4,hours,Samira tutoring
+A-TIME-2,Reading Futures,staff_time,TS-102,2,hours,Half of shared preparation
+A-EXP-1,Reading Futures,expense,RC-201,70.00,USD,Books share
+A-ACT-1,Reading Futures,activity_count,,10,sessions,Reading workshops completed

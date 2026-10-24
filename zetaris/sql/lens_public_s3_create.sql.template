@@ -1,0 +1,38 @@
+-- OPTIONAL PUBLIC-S3 FALLBACK ONLY. Preferred: upload through NDP File System;
+-- see zetaris/README.md. Do not run until an intentionally public S3 path exists.
+-- Replace YOUR_BUCKET and YOUR_REGION, verify each object with S3 first,
+-- and run each complete statement separately in Zetaris SQL Editor.
+-- This follows zetaris/getting-started open_data/parquet_csv/HOWTO.md.
+-- The five local Desktop CSV paths are NOT visible to Zetaris automatically.
+
+CREATE LIGHTNING DATABASE LENS_DEMO_FILES DESCRIBE BY "Lens synthetic grant review evidence";
+
+CREATE LIGHTNING FILESTORE TABLE timesheets FROM LENS_DEMO_FILES FORMAT CSV OPTIONS (
+  PATH "s3a://YOUR_BUCKET/lens/timesheets.csv",
+  inferSchema "true", header "true", isS3BucketPublic "true",
+  useS3PathStyleAccess "true", s3Endpoint "s3.YOUR_REGION.amazonaws.com"
+);
+
+CREATE LIGHTNING FILESTORE TABLE receipts FROM LENS_DEMO_FILES FORMAT CSV OPTIONS (
+  PATH "s3a://YOUR_BUCKET/lens/receipts.csv",
+  inferSchema "true", header "true", isS3BucketPublic "true",
+  useS3PathStyleAccess "true", s3Endpoint "s3.YOUR_REGION.amazonaws.com"
+);
+
+CREATE LIGHTNING FILESTORE TABLE activity_log FROM LENS_DEMO_FILES FORMAT CSV OPTIONS (
+  PATH "s3a://YOUR_BUCKET/lens/activity_log.csv",
+  inferSchema "true", header "true", isS3BucketPublic "true",
+  useS3PathStyleAccess "true", s3Endpoint "s3.YOUR_REGION.amazonaws.com"
+);
+
+CREATE LIGHTNING FILESTORE TABLE reading_futures_draft FROM LENS_DEMO_FILES FORMAT CSV OPTIONS (
+  PATH "s3a://YOUR_BUCKET/lens/reading_futures_draft.csv",
+  inferSchema "true", header "true", isS3BucketPublic "true",
+  useS3PathStyleAccess "true", s3Endpoint "s3.YOUR_REGION.amazonaws.com"
+);
+
+CREATE LIGHTNING FILESTORE TABLE community_learning_draft FROM LENS_DEMO_FILES FORMAT CSV OPTIONS (
+  PATH "s3a://YOUR_BUCKET/lens/community_learning_draft.csv",
+  inferSchema "true", header "true", isS3BucketPublic "true",
+  useS3PathStyleAccess "true", s3Endpoint "s3.YOUR_REGION.amazonaws.com"
+);

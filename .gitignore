@@ -1,0 +1,33 @@
+# Local charity records, review state, and Meterless runtime state
+/data/
+**/.world/
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+/env.local.txt
+*.pem
+*.p12
+*.pfx
+*.key
+
+# Python, Node, test, and editor outputs
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+node_modules/
+coverage/
+.coverage
+*.log
+*.sqlite3
+*.db
+
+# Downloaded installers and OS files
+*.exe
+*.msi
+*.msix
+.DS_Store
+Thumbs.db

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lens | Grant report review</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="top"><div class="brand">lens<span>.</span></div><div class="top-note">Grant report review workspace <span class="local">Local preview</span></div></header>
+  <main>
+    <section class="intro">
+      <p class="eyebrow">BEFORE THE REPORT GOES OUT</p>
+      <h1>Know which claims need another look.</h1>
+      <p>Bring two draft grant reports together with their timesheets, receipts and activity log. Lens compares shared records, shows its working, and keeps your review decisions.</p>
+      <p class="caution">Lens raises review questions. It does not certify a report or accuse anyone of wrongdoing.</p>
+    </section>
+    <div id="notice" role="status" aria-live="polite"></div>
+    <section class="stage" aria-labelledby="start-title">
+      <div class="section-head"><div><p class="eyebrow">01 / RECORDS</p><h2 id="start-title">Start with the source files</h2></div><span id="saved" class="meta"></span></div>
+      <p class="muted">Five CSVs are needed. Source IDs must be stable across files. Uploading a new set replaces the current local review.</p>
+      <div class="start-grid">
+        <form id="import-form" class="upload-panel">
+          <div class="file-grid">
+            <label>Draft report A <small>reading_futures_draft.csv</small><input required type="file" accept=".csv,text/csv" data-file="reading_futures_draft.csv"></label>
+            <label>Draft report B <small>community_learning_draft.csv</small><input required type="file" accept=".csv,text/csv" data-file="community_learning_draft.csv"></label>
+            <label>Timesheets <small>timesheets.csv</small><input required type="file" accept=".csv,text/csv" data-file="timesheets.csv"></label>
+            <label>Receipts <small>receipts.csv</small><input required type="file" accept=".csv,text/csv" data-file="receipts.csv"></label>
+            <label>Activity log <small>activity_log.csv</small><input required type="file" accept=".csv,text/csv" data-file="activity_log.csv"></label>
+          </div>
+          <div class="period"><label>Period starts<input id="period-start" type="date" value="2026-07-01" required></label><label>Period ends<input id="period-end" type="date" value="2026-07-31" required></label></div>
+          <button class="primary" type="submit">Import my records</button>
+          <button id="import-zetaris" class="secondary" type="button">Import registered Zetaris tables</button>
+          <p class="fine">Requires all five grant tables and local API configuration. Every import replaces the current review with a new query snapshot; it does not change Zetaris data.</p>
+        </form>
+        <aside class="sample-panel"><p class="eyebrow">TRY THE WORKFLOW</p><h3>Sample case</h3><p>A clearly synthetic set of two grant reports and three source files. It contains one overallocated timesheet, one valid split, and a workshop evidence gap.</p><button id="sample" type="button" class="secondary">Load sample case</button><p class="fine">Loading the sample replaces the current local review.</p></aside>
+      </div>
+    </section>
+    <section id="workspace" class="stage hidden" aria-labelledby="workspace-title">
+      <div class="section-head"><div><p class="eyebrow">02 / INVESTIGATION</p><h2 id="workspace-title">Review the imported records</h2></div><span id="data-label" class="data-label"></span></div>
+      <p id="import-summary" class="muted"></p>
+      <div id="integration-status" class="integration-status" aria-live="polite"></div>
+      <aside id="zetaris-evidence" class="zetaris-evidence hidden" aria-label="Zetaris evidence snapshot"></aside>
+      <details id="investigation-trace" class="investigation-trace hidden"><summary>Inspect the investigation steps</summary><p class="fine">This log records executed queries, source links, deterministic checks, and Meterless writes. It does not represent independent model reasoning or certify a report.</p><ol id="trace-list"></ol></details>
+      <details id="records"><summary>Inspect imported rows and source locations</summary><div id="record-list"></div></details>
+      <div id="mapping"></div>
+      <div class="action-row"><button id="check" class="primary">Check both reports</button><p id="check-state" class="muted"></p></div>
+      <div id="results" class="hidden"><div class="section-head"><div><p class="eyebrow">03 / YOUR REVIEW</p><h2>Questions and supporting records</h2></div><a id="export" class="text-link" href="/api/export" download="lens-review.json">Download review JSON</a></div><p class="muted">A clear allocation means the linked totals fit within the supplied source quantity. It does not certify funder compliance. Your explanations remain human notes, not automatic resolutions.</p><div id="finding-list"></div></div>
+    </section>
+  </main>
+  <footer>Lens local preview · Records are stored on this computer in the app's data folder.</footer>
+</body>
+</html>

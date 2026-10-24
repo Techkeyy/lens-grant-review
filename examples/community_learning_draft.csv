@@ -1,0 +1,5 @@
+claim_id,grant,kind,source_id,quantity,unit,description
+B-TIME-1,Community Learning,staff_time,TS-101,4,hours,Samira tutoring
+B-TIME-2,Community Learning,staff_time,TS-102,2,hours,Half of shared preparation
+B-EXP-1,Community Learning,expense,RC-201,50.00,USD,Books share
+B-TIME-UNCERTAIN,Community Learning,staff_time,,3,hours,Tari workshop support - identity unconfirmed
