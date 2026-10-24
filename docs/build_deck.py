@@ -119,20 +119,20 @@ rect(s, 2.35, 5.85, 8.65, 0.76, PALE, True)
 txt(s, "4 + 4 = 8 hours claimed  >  4 hours recorded", 2.55, 5.98, 8.25, 0.48, 22, NAVY, True, PP_ALIGN.CENTER)
 
 # 5: architecture, with the unproven model claim clearly absent.
-s = base("Evidence retrieval and checking have distinct jobs", 5,
-         "Python HTTP app and SQLite review; browser UI in HTML, CSS and JavaScript.")
+s = base("Lens chooses one bounded evidence follow-up", 5,
+         "Deterministic planner and arithmetic; Python HTTP app, SQLite review, browser UI.")
 for x, label, body in [
     (0.65, "Zetaris", "Query five registered grant tables; retain source IDs, hashes and request IDs"),
-    (4.43, "Lens", "Validate the snapshot; link claims to sources; calculate cross-grant totals"),
+    (4.43, "Lens", "Check cross-grant totals; choose a follow-up from the finding; reread only relevant tables"),
     (8.21, "Meterless", "Record source, finding and reviewer events in the local reference runtime"),
 ]:
     panel(s, x, 2.15, 3.55, 3.4, label, body)
-txt(s, "A reviewer checks the source, corrects or explains, and reruns the review.",
+txt(s, "After a correction, the next open finding can trigger a different evidence query.",
     1.0, 6.0, 11.2, 0.54, 19, NAVY, True, PP_ALIGN.CENTER)
 
 # 6: sponsor contribution and honest boundaries.
 s = base("Sponsor tools have jobs in the review", 6,
-         "Verified 24 October 2026 with synthetic grant records; film the same path for submission.")
+         "Five-table import and two adaptive follow-up branches verified against live Zetaris tables; filming pending.")
 panel(s, 0.72, 1.93, 5.85, 4.55, "Zetaris", "Fifteen live requests read five registered tables: 4 timesheets, 1 receipt, 8 activities, and 4 rows from each draft.\n\nThe `OVERALLOCATED_SOURCE` finding retained the timesheet table's source key and snapshot hash.")
 panel(s, 6.77, 1.93, 5.85, 4.55, "Meterless", "The same Lens run wrote a finding ID to the local World Model reference runtime. After app restart, five findings persisted and a fresh Meterless audit returned 39 events.\n\nFilm the restart and human correction on the same review.")
 

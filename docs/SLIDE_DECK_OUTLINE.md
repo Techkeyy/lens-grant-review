@@ -1,6 +1,6 @@
 # Lens hackathon slide deck outline
 
-**Working outline · 23 October 2026.** Prepare the final deck from verified build evidence. The official submission rule requires problem and users, solution, agent workflow or architecture, stack, Zetaris and Meterless use, uniqueness of those uses, product visuals, and future enhancements. The current local build is still missing a verified live Zetaris grant-data query, agent-driven investigation trace, and Cursor development evidence. The deck must disclose those gaps until they are closed.
+**Working outline · updated 24 October 2026.** Prepare the final deck from verified build evidence. The official submission rule requires problem and users, solution, agent workflow or architecture, stack, Zetaris and Meterless use, uniqueness of those uses, product visuals, and future enhancements. Live Zetaris import, two conditional follow-up branches, Meterless persistence, and Cursor development use have been verified. The final filmed interface take and GitHub submission remain open. Describe the investigator as bounded and deterministic, without claiming model reasoning.
 
 ## Deck story: seven slides
 
@@ -37,9 +37,9 @@
 ```text
 Two report claims + timesheet/receipt/activity rows
             ↓ stable source IDs or human-confirmed links
-Cross-source retrieval (Zetaris, only after live proof)
+Cross-source retrieval (Zetaris, verified live)
             ↓
-Bounded agent investigation (only after trace proof)
+Bounded conditional evidence probe (verified live)
             ↓
 Deterministic reconciliation in lens_core.py
             ↓ exact claim/source rows and calculation
@@ -48,7 +48,7 @@ Manager correction or explanation
 Saved review in SQLite + Meterless reference-runtime history
 ```
 
-**Boundary:** A model may help choose what to investigate and explain a finding, but cannot invent a source match, override the calculation, or clear an unsupported claim. Current code proves local deterministic checks and Meterless reference-runtime events; the live Zetaris and agent stages remain to be proved before finalizing this diagram as an implemented path.
+**Boundary:** The current planner selects from fixed read-only queries based on the checked finding. It does not use a language model, invent a source match, override the calculation, or clear an unsupported claim. Live Zetaris reads, conditional probe choices, and Meterless reference-runtime events are verified; the filmed interface demonstration remains to be done.
 
 ### 5. What each sponsor actually contributes
 

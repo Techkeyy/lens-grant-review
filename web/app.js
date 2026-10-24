@@ -105,6 +105,33 @@ function requestIdCount(requestIds) {
   return Object.values(requestIds || {}).reduce((total, value) => total + (Array.isArray(value) ? value.length : 1), 0);
 }
 
+function renderAdaptiveInvestigation() {
+  const panel = $('#adaptive-investigation');
+  const probe = state.investigation;
+  if (!state.result || !probe) {
+    panel.classList.add('hidden');
+    panel.innerHTML = '';
+    return;
+  }
+  const label = {
+    confirmed_against_snapshot: 'Live reread matched the imported snapshot',
+    snapshot_only: 'Checked uploaded rows only',
+    stale: 'Source changed since import',
+    unavailable: 'Live follow-up unavailable'
+  }[probe.status] || 'Follow-up status unknown';
+  const locations = (probe.refs || []).map(ref => ref.zetaris
+    ? `${ref.id} · ${ref.zetaris.table} / ${ref.zetaris.key}`
+    : `${ref.id} · ${ref.file} row ${ref.row}`);
+  panel.innerHTML = `<p class="eyebrow">SELECTED FOLLOW-UP · ${escapeHtml(probe.code)}</p>
+    <h3>${escapeHtml(label)}</h3>
+    <p><strong>Why this probe:</strong> ${escapeHtml(probe.reason)}</p>
+    <p>${escapeHtml(probe.observation)}</p>
+    <p><strong>Ask the reviewer:</strong> ${escapeHtml(probe.question)}</p>
+    <p class="fine">Selected ${escapeHtml((probe.tables?.length ? probe.tables : probe.files || []).join(', '))} · ${escapeHtml((probe.request_ids || []).length)} follow-up request IDs.</p>
+    <p class="fine">Referenced rows: ${escapeHtml(locations.join('; '))}</p>`;
+  panel.classList.remove('hidden');
+}
+
 function renderZetarisEvidence() {
   const panel = $('#zetaris-evidence');
   const z = state.zetaris;
@@ -127,7 +154,7 @@ function renderInvestigationTrace() {
   const panel = $('#investigation-trace');
   const steps = state.trace || [];
   panel.classList.toggle('hidden', !steps.length);
-  const labels = {zetaris_query:'Zetaris query', local_import:'Local import', meterless_ingest:'Meterless ingest', source_link:'Source link', reconciliation:'Rule check', finding_recorded:'Meterless finding'};
+  const labels = {zetaris_query:'Zetaris query', local_import:'Local import', meterless_ingest:'Meterless ingest', source_link:'Source link', reconciliation:'Rule check', adaptive_probe:'Selected follow-up', finding_recorded:'Meterless finding'};
   $('#trace-list').innerHTML = steps.map(step => {
     const refs = (step.refs || []).map(ref => {
       const location = ref.zetaris
@@ -143,6 +170,8 @@ function renderInvestigationTrace() {
           ? `${step.finding_count} findings: ${(step.finding_codes || []).join(', ')}`
           : step.stage === 'finding_recorded'
             ? `${step.code} · ${step.status} · arithmetic ${JSON.stringify(step.arithmetic)} · Meterless ID ${step.meterless_id}`
+            : step.stage === 'adaptive_probe'
+              ? `${step.code} · ${step.status} · ${step.reason} · ${step.observation} · tables: ${(step.tables || []).join(', ') || 'none'} · request IDs: ${(step.request_ids || []).join(', ') || 'none'}`
             : step.stage === 'meterless_ingest'
               ? `${step.source_count} source rows; ${step.claim_count} report claims`
               : `${Object.entries(step.files || {}).map(([name,count]) => `${name}: ${count} rows`).join('; ')}`;
@@ -162,6 +191,7 @@ function render() {
   inspectRecords();
   renderMapping();
   $('#results').classList.toggle('hidden', !state.result);
+  renderAdaptiveInvestigation();
   $('#check').textContent = state.result ? 'Rerun check' : 'Check both reports';
   $('#check-state').textContent = state.result ? `Checked revision ${state.revision}. Review remains saved after refresh.` : state.corrections?.length ? 'Correction saved. Rerun to see the updated result.' : 'Ready to check the imported records.';
   if (state.result) $('#finding-list').innerHTML = state.result.findings.map(findingHtml).join('');

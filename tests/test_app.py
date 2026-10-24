@@ -53,7 +53,10 @@ class AppJourneyTests(unittest.TestCase):
         self.assertEqual(state["case"]["label"], "ZETARIS QUERY SNAPSHOT")
         self.assertEqual(state["case"]["sources"][0]["ref"]["zetaris"]["table"], TABLES.timesheets)
         self.assertEqual(state["zetaris"]["manifest"]["timesheets.csv"]["row_count"], 4)
-        status, state = self.call("POST", "/api/check", {})
+        with patch("app.ZetarisConfig.from_environment", return_value=FixtureClient.config), \
+             patch("app.LensTables.from_environment", return_value=TABLES), \
+             patch("app.ZetarisClient", return_value=FixtureClient()):
+            status, state = self.call("POST", "/api/check", {})
         self.assertEqual(status, 200, state)
         finding = next(item for item in state["result"]["findings"] if item["code"] == "OVERALLOCATED_SOURCE")
         self.assertEqual(finding["sources"][0]["zetaris"]["key"], "TS-101")
@@ -63,10 +66,14 @@ class AppJourneyTests(unittest.TestCase):
         self.assertEqual(queries[0]["request_ids"], snapshot["request_ids"]["timesheets.csv"])
         links = [step for step in state["trace"] if step["stage"] == "source_link"]
         self.assertTrue(any(step["claim_id"] == "B-TIME-1" and "TS-101" in step["source_ids"] for step in links))
-        traced = next(step for step in state["trace"] if step.get("finding_key") == finding["key"])
+        traced = next(step for step in state["trace"] if step["stage"] == "finding_recorded" and step.get("finding_key") == finding["key"])
         self.assertEqual(traced["meterless_id"], finding["meterless_id"])
         self.assertEqual(traced["arithmetic"], finding["arithmetic"])
         self.assertEqual(traced["refs"][-1]["zetaris"]["snapshot_sha256"], snapshot["manifest"]["timesheets.csv"]["snapshot_sha256"])
+        self.assertEqual(state["investigation"]["code"], "OVERALLOCATED_SOURCE")
+        self.assertEqual(state["investigation"]["status"], "confirmed_against_snapshot")
+        self.assertEqual(len(state["investigation"]["request_ids"]), 3)
+        self.assertTrue(any(step["stage"] == "adaptive_probe" for step in state["trace"]))
         with patch("app.ZetarisConfig.from_environment", return_value=FixtureClient.config), \
              patch("app.LensTables.from_environment", return_value=TABLES), \
              patch("app.read_lens_snapshot", return_value={"status": "error", "review_eligible": False, "message": "partial data"}):
@@ -116,6 +123,26 @@ class AppJourneyTests(unittest.TestCase):
         status, export = self.call("GET", "/api/export")
         self.assertEqual(status, 200)
         self.assertEqual(export["result"], reopened["result"])
+
+    def test_zetaris_followup_switches_branch_after_local_correction(self):
+        snapshot = read_lens_snapshot(FixtureClient(), TABLES)
+        with patch("app.ZetarisConfig.from_environment", return_value=FixtureClient.config), \
+             patch("app.LensTables.from_environment", return_value=TABLES), \
+             patch("app.read_lens_snapshot", return_value=snapshot), \
+             patch("app.ZetarisClient", side_effect=lambda config: FixtureClient()):
+            status, _ = self.call("POST", "/api/import-zetaris", {"period": {"start": "2026-07-01", "end": "2026-07-31"}})
+            self.assertEqual(status, 200)
+            status, checked = self.call("POST", "/api/check", {})
+            self.assertEqual(status, 200)
+            self.assertEqual(checked["investigation"]["code"], "OVERALLOCATED_SOURCE")
+            status, _ = self.call("POST", "/api/correct", {"claim_id": "B-TIME-1", "quantity": "0"})
+            self.assertEqual(status, 200)
+            status, rerun = self.call("POST", "/api/check", {})
+            self.assertEqual(status, 200)
+        self.assertEqual(rerun["investigation"]["code"], "ACTIVITY_SUPPORT_GAP")
+        self.assertEqual(rerun["investigation"]["status"], "confirmed_against_snapshot")
+        self.assertEqual(rerun["investigation"]["tables"], [TABLES.activity])
+        self.assertEqual(len([step for step in rerun["trace"] if step["stage"] == "adaptive_probe"]), 1)
 
     def test_invalid_import_rejected_without_replacing_saved_review(self):
         status, original = self.call("POST", "/api/sample", {})

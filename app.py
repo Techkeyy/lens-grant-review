@@ -18,6 +18,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from lens_core import analyze_case
+from lens_investigator import investigate
 from zetaris import ZetarisClient, ZetarisConfig
 from zetaris.lens_adapter import LensTables
 from zetaris.raw_evidence import read_lens_snapshot
@@ -280,13 +281,36 @@ def trace_check_links(state):
 
 def trace_check_outcome(state):
     findings = state["result"]["findings"]
-    trace_step(state, "reconciliation", "Ran the deterministic reconciliation rules.",
-               finding_count=len(findings), finding_codes=[item["code"] for item in findings])
     for finding in findings:
         trace_step(state, "finding_recorded", "Recorded the checked finding in Meterless.",
                    finding["claims"] + finding["sources"],
                    finding_key=finding["key"], code=finding["code"], status=finding["status"],
                    arithmetic=finding["arithmetic"], meterless_id=finding["meterless_id"])
+
+
+def run_investigation(state):
+    """Choose one follow-up from current findings; keep failures non-authoritative."""
+    client = tables = None
+    if "zetaris" in state:
+        try:
+            config = ZetarisConfig.from_environment()
+            tables = LensTables.from_environment()
+            client = ZetarisClient(config)
+        except ValueError:
+            pass  # Persist an unavailable probe without exposing connection details.
+    probe = investigate(state["result"]["findings"], state.get("zetaris"), client, tables)
+    state["investigation"] = probe
+    if probe:
+        summary = ("Completed one bounded Zetaris follow-up."
+                   if probe["status"] == "confirmed_against_snapshot" else
+                   "Attempted a bounded Zetaris follow-up; live confirmation was not possible."
+                   if probe["request_ids"] else
+                   "Selected a bounded follow-up without a live Zetaris query.")
+        trace_step(state, "adaptive_probe", summary,
+                   probe["refs"], finding_key=probe["finding_key"], code=probe["code"],
+                   reason=probe["reason"], status=probe["status"], files=probe["files"],
+                   tables=probe["tables"], request_ids=probe["request_ids"],
+                   observation=probe["observation"], question=probe["question"])
 
 
 def new_state(files, period, label):
@@ -360,6 +384,7 @@ class Handler(BaseHTTPRequestHandler):
             if "zetaris" in state:
                 export["zetaris"] = state["zetaris"]
             export["trace"] = state.get("trace", [])
+            export["investigation"] = state.get("investigation")
             return self._json(200, export)
         target = WEB / ("index.html" if path == "/" else path.lstrip("/"))
         if target.parent != WEB or target.name not in {"index.html", "app.js", "style.css"} or not target.is_file():
@@ -404,6 +429,10 @@ class Handler(BaseHTTPRequestHandler):
                     raise ValueError("Import records before checking")
                 trace_check_links(state)
                 state["result"] = result_with_decisions(state)
+                trace_step(state, "reconciliation", "Ran the deterministic reconciliation rules.",
+                           finding_count=len(state["result"]["findings"]),
+                           finding_codes=[item["code"] for item in state["result"]["findings"]])
+                run_investigation(state)
                 record_meterless_findings(state)
                 trace_check_outcome(state)
                 state["phase"] = "checked"
