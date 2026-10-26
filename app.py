@@ -550,7 +550,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, export)
         if path == "/vendor/supabase.js":
             target = WEB / "vendor" / "supabase.js"
-        elif path in {"/", "/index.html", "/app.js", "/style.css", "/hero-magnifier.png"}:
+        elif path in {"/", "/index.html", "/app.js", "/scroll-reveal.js", "/style.css", "/hero-magnifier.png"}:
             target = WEB / ("index.html" if path == "/" else path.lstrip("/"))
         else:
             self.send_error(404)

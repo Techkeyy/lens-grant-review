@@ -177,8 +177,23 @@ input[type=checkbox] { accent-color:var(--deep); width:18px; height:18px; }
 .finding.clear .badge { color:var(--good); border-color:var(--good); background:var(--good-soft); }
 .finding.needs_correction .badge { color:var(--error); border-color:var(--error); background:var(--error-soft); }
 .finding-body { background:var(--surface); padding:0 22px 24px; }
-.finding-work { display:grid; grid-template-columns:minmax(0,1.3fr) minmax(310px,.7fr); grid-template-areas:"math math" "proof decision"; gap:18px 25px; border-top:1px solid var(--line); padding-top:20px; }
-.finding-proof { grid-area:proof; min-width:0; }
+.finding-work { display:grid; grid-template-columns:minmax(0,1.3fr) minmax(310px,.7fr); grid-template-areas:"story decision" "details details"; gap:22px 25px; border-top:1px solid var(--line); padding-top:20px; }
+.finding[open] .finding-summary { display:none; }
+.finding-story { grid-area:story; min-width:0; }
+.finding-story .eyebrow { margin:0 0 9px; }
+.finding-lead { max-width:760px; margin:0 0 20px; color:var(--deep); font-size:clamp(20px,2vw,25px); font-weight:700; line-height:1.38; }
+.comparison { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+.comparison-item { min-width:0; padding:17px 15px; border:1px solid var(--line); background:var(--surface); }
+.comparison-item.source { background:var(--soft); border-color:#bdd0c3; }
+.comparison-item span { display:block; min-height:2.6em; color:var(--muted); font-size:14px; line-height:1.3; }
+.comparison-item strong { display:block; margin-top:8px; color:var(--deep); font-size:22px; line-height:1.2; }
+.reviewer-step { margin:0 0 20px; font-size:16px; line-height:1.5; color:var(--deep); }
+.source-details { grid-area:details; min-width:0; border-top:1px solid var(--line); }
+.source-details>summary { display:flex; justify-content:space-between; align-items:center; gap:12px; min-height:54px; cursor:pointer; color:var(--deep); font-weight:700; list-style:none; }
+.source-details>summary::-webkit-details-marker { display:none; }
+.source-details>summary .icon { width:17px; height:17px; color:var(--accent); }
+.source-details[open]>summary .icon { transform:rotate(180deg); }
+.source-details .evidence { padding:10px 0 8px; }
 .math { grid-area:math; margin:0; padding:15px 18px; background:var(--soft); color:var(--deep); font-size:18px; font-weight:800; line-height:1.45; }
 .evidence { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
 .evidence>div { min-width:0; }
@@ -246,7 +261,7 @@ body.public-mode:not(.zetaris-allowed) #import-zetaris,body.public-mode:not(.zet
 @media(max-width:1050px) {
   .hero-art img { width:105vw; right:-16%; top:-7%; }
   .welcome::after { background:linear-gradient(90deg,#101b17 0%,rgba(16,27,23,.96) 34%,rgba(16,27,23,.35) 85%); }
-  .finding-work { grid-template-columns:1fr; grid-template-areas:"math" "decision" "proof"; }
+  .finding-work { grid-template-columns:1fr; grid-template-areas:"story" "decision" "details"; }
   .evidence { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .decision-panel { max-width:none; }
 }
@@ -312,6 +327,8 @@ body.public-mode:not(.zetaris-allowed) #import-zetaris,body.public-mode:not(.zet
   .finding>summary { padding:17px 14px; }
   .finding-body { padding:0 14px 18px; }
   .finding-work { gap:18px; }
+  .comparison { grid-template-columns:1fr; }
+  .comparison-item span { min-height:0; }
   .finding-summary-bar { padding:10px 14px; gap:2px 10px; }
   .finding-summary-bar strong,.finding-summary-bar span { font-size:14px; }
   .decision-panel { padding:17px; }
@@ -320,3 +337,11 @@ body.public-mode:not(.zetaris-allowed) #import-zetaris,body.public-mode:not(.zet
   .record-row { grid-template-columns:1fr; gap:3px; }
 }
 @media(prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } * { transition:none!important; animation:none!important; } }
+
+/* Small scroll entrances help separate the public story and each review step. */
+html.scroll-motion .scroll-target { transition:opacity .46s ease, transform .46s cubic-bezier(.2,.7,.2,1); }
+html.scroll-motion .scroll-await { opacity:0; transform:translateY(14px); }
+html.scroll-motion .scroll-shown { opacity:1; transform:none; }
+@media(prefers-reduced-motion:reduce) {
+  html.scroll-motion .scroll-await { opacity:1; transform:none; }
+}

@@ -150,15 +150,51 @@ function renderMapping() {
 }
 
 function title(finding) {
-  return ({OVERALLOCATED_SOURCE:'Shared source exceeds recorded total',
-    ALLOCATION_WITHIN_SOURCE:'Allocation fits the supplied source',
-    ACTIVITY_SUPPORT_GAP:'Activity claim needs more support',
+  if (finding.code === 'ACTIVITY_SUPPORT_GAP' && finding.arithmetic?.reported !== undefined)
+    return `${finding.arithmetic.reported} sessions reported, ${finding.arithmetic.linked_distinct_records} records found`;
+  return ({OVERALLOCATED_SOURCE:'Two reports claim more hours than the timesheet shows',
+    ALLOCATION_WITHIN_SOURCE:'These claims fit the supporting record',
+    ACTIVITY_SUPPORT_GAP:'The report lists more sessions than the records show',
     ACTIVITY_LINKS_UNVERIFIED:'Some activity links need review',
     TIMESHEET_PROJECT_DIFFERS:'Timesheet names another program',
     ALLOCATION_TOTAL_WITH_PROJECT_QUESTION:'Allocation total fits, project basis needs review',
-    SOURCE_IDENTITY_UNCERTAIN:'Source identity needs confirmation',
+    SOURCE_IDENTITY_UNCERTAIN:'Choose which timesheet supports this claim',
     SOURCE_MISMATCH:'Claim and source differ', SOURCE_OUTSIDE_PERIOD:'Source is outside the period',
     STAFF_IDENTITY_UNVERIFIED:'Staff identity needs review', EXPENSE_IDENTITY_UNVERIFIED:'Vendor identity needs review'})[finding.code] || finding.code;
+}
+
+function plainFinding(finding) {
+  const a = finding.arithmetic || {};
+  if (finding.code === 'OVERALLOCATED_SOURCE' && a.allocated_total !== undefined)
+    return `Together, the reports claim ${a.allocated_total} ${a.unit}, but the linked timesheet records ${a.source_total} ${a.unit} in total.`;
+  if (finding.code === 'ACTIVITY_SUPPORT_GAP' && a.reported !== undefined)
+    return `The report says ${a.reported} sessions took place. The linked activity log contains ${a.linked_distinct_records}, leaving ${a.gap} without a supplied record.`;
+  if (finding.code === 'SOURCE_IDENTITY_UNCERTAIN')
+    return 'This claim has no confirmed supporting record. The possible matches need a person to check them.';
+  if (finding.status === 'clear' && a.allocated_total !== undefined)
+    return `The reports claim ${a.allocated_total} ${a.unit} together, matching the ${a.source_total} ${a.unit} in the linked record.`;
+  return finding.message;
+}
+
+function reviewerStep(finding) {
+  if (finding.status === 'clear') return 'No amount gap was found in these linked records. You can continue or inspect the original rows.';
+  if (finding.code === 'OVERALLOCATED_SOURCE') return 'Check how the time should be split, then change the claim that needs correcting. Lens cannot tell which report is wrong.';
+  if (finding.code === 'ACTIVITY_SUPPORT_GAP') return 'Look for the missing session records. If the reported count is wrong, update your draft report and import the revised files. You can save a note while you check.';
+  if (finding.code === 'SOURCE_IDENTITY_UNCERTAIN') return 'Go to Prepare and confirm the matching timesheet. Do not choose based on a similar name alone.';
+  return 'Check the original records, correct the draft if needed, or save a note for your team.';
+}
+
+function comparison(finding) {
+  const claims = finding.claims.map(ref => state.case.claims.find(claim => claim.id === ref.id)).filter(Boolean);
+  const a = finding.arithmetic || {};
+  const cards = claims.map((claim, index) => `<div class="comparison-item"><span>Report ${index + 1}: ${escapeHtml(claim.grant)}</span><strong>${escapeHtml(claim.quantity)} ${escapeHtml(claim.unit)}</strong></div>`);
+  if (finding.code === 'ACTIVITY_SUPPORT_GAP' && a.linked_distinct_records !== undefined)
+    cards.push(`<div class="comparison-item source"><span>Sessions in the activity log</span><strong>${escapeHtml(a.linked_distinct_records)} sessions</strong></div>`);
+  else if (a.source_total !== undefined)
+    cards.push(`<div class="comparison-item source"><span>Amount in the linked record</span><strong>${escapeHtml(a.source_total)} ${escapeHtml(a.unit)}</strong></div>`);
+  else if (finding.sources.length)
+    cards.push(`<div class="comparison-item source"><span>Possible supporting records</span><strong>${escapeHtml(finding.sources.length)} to check</strong></div>`);
+  return cards.length ? `<div class="comparison">${cards.join('')}</div>` : '';
 }
 
 function arithmetic(finding) {
@@ -181,15 +217,15 @@ function findingHtml(finding, open=false) {
   const note = finding.human_explanation;
   const status = ({needs_correction:'Needs correction',needs_evidence:'Needs evidence',needs_review:'Needs review',clear:'Totals fit'})[finding.status] || finding.status.replaceAll('_',' ');
   return `<details class="finding ${escapeHtml(finding.status)}" name="lens-finding" data-key="${escapeHtml(finding.key)}" ${open ? 'open' : ''}>
-    <summary><div class="finding-head"><div><h3>${escapeHtml(title(finding))}</h3><p class="finding-summary">${escapeHtml(finding.message)}</p></div><span class="badge">${escapeHtml(status)}</span></div><svg class="icon" aria-hidden="true"><use href="#icon-chevron"></use></svg></summary>
-    <div class="finding-body"><div class="finding-work"><div class="math">${arithmetic(finding)}</div><div class="finding-proof">
-      <div class="evidence"><div><h4>What the report claims</h4>${currentClaims}${finding.claims.map(record).join('')}</div><div><h4>What the source records show</h4>${finding.sources.length ? finding.sources.map(record).join('') : '<p class="muted">No confirmed source row. Choose a source before treating this claim as verified.</p>'}</div></div>
-      ${finding.claims.some(ref => ['linked source','user-confirmed source link'].includes(state.case.claims.find(c=>c.id===ref.id)?.identity_origin)) ? '<p class="fine">At least one draft omitted person or vendor. Identity shown in analysis came from the linked source ID; the report did not independently state it.</p>' : ''}
-    </div><aside class="decision-panel"><p class="eyebrow">YOUR NEXT DECISION</p>
+    <summary><div class="finding-head"><div><h3>${escapeHtml(title(finding))}</h3><p class="finding-summary">${escapeHtml(plainFinding(finding))}</p></div><span class="badge">${escapeHtml(status)}</span></div><svg class="icon" aria-hidden="true"><use href="#icon-chevron"></use></svg></summary>
+    <div class="finding-body"><div class="finding-work"><div class="finding-story"><p class="eyebrow">What we found</p><p class="finding-lead">${escapeHtml(plainFinding(finding))}</p>${comparison(finding)}</div>
+    <aside class="decision-panel"><p class="eyebrow">WHAT YOU CAN DO</p><p class="reviewer-step">${escapeHtml(reviewerStep(finding))}</p>
       ${note ? `<p class="human-note" tabindex="-1"><strong>Explanation saved</strong><br>${escapeHtml(note.text)}<br><small>Source revision ${escapeHtml(note.source_revision)}. This note does not clear the question.</small></p>` : ''}
-      <div class="review-actions">${claimOptions && finding.status !== 'clear' ? `<form class="correct-form" data-key="${escapeHtml(finding.key)}"><label>Correct a report claim</label><select name="claim_id" aria-label="Claim to correct">${claimOptions}</select><label for="qty-${escapeHtml(finding.key)}">New amount</label><input id="qty-${escapeHtml(finding.key)}" name="quantity" type="number" min="0" step="any" required aria-label="New amount"><button type="submit" class="primary">Save correction</button></form>` : ''}
+      <div class="review-actions">${finding.code === 'SOURCE_IDENTITY_UNCERTAIN' ? '<button type="button" class="secondary review-links">Confirm supporting record</button>' : ''}${claimOptions && finding.status !== 'clear' ? `<form class="correct-form" data-key="${escapeHtml(finding.key)}"><label>Choose which report amount to change</label><select name="claim_id" aria-label="Report claim to correct">${claimOptions}</select><label for="qty-${escapeHtml(finding.key)}">New amount (${escapeHtml(state.case.claims.find(claim => claim.id === finding.claims[0]?.id)?.unit || 'same unit')})</label><input id="qty-${escapeHtml(finding.key)}" name="quantity" type="number" min="0" step="any" required aria-label="New report amount"><button type="submit" class="primary">Save correction</button></form>` : ''}
       ${finding.status !== 'clear' ? `<form class="explain-form" data-key="${escapeHtml(finding.key)}"><label>Or record an explanation</label><textarea name="explanation" maxlength="2000" required placeholder="What should your team know?"></textarea><button type="submit" class="secondary">Save explanation</button></form>` : '<p class="good-note">This check found no quantity gap for these linked rows. You can inspect the evidence or continue to export.</p>'}</div>
-    </aside></div></div>
+    </aside><details class="source-details"><summary>View original rows and references <svg class="icon" aria-hidden="true"><use href="#icon-chevron"></use></svg></summary><div class="evidence"><div><h4>Draft report rows</h4>${currentClaims}${finding.claims.map(record).join('')}</div><div><h4>${finding.code === 'SOURCE_IDENTITY_UNCERTAIN' ? 'Possible source rows' : 'Supporting source rows'}</h4>${finding.sources.length ? finding.sources.map(record).join('') : '<p class="muted">No confirmed source row. Choose a source before treating this claim as verified.</p>'}</div></div>
+      ${finding.claims.some(ref => ['linked source','user-confirmed source link'].includes(state.case.claims.find(c=>c.id===ref.id)?.identity_origin)) ? '<p class="fine">At least one draft omitted person or vendor. Identity shown in analysis came from the linked source ID; the report did not independently state it.</p>' : ''}
+    </details></div></div>
   </details>`;
 }
 
@@ -545,6 +581,12 @@ $('#finding-list').addEventListener('submit', event => {
     event.preventDefault();
     act(event.submitter, () => request('/api/explain', {key: form.dataset.key, explanation: form.elements.explanation.value}), 'Explanation saved with the current source revision.');
   }
+});
+$('#finding-list').addEventListener('click', event => {
+  if (!event.target.closest('.review-links')) return;
+  showView('prepare', true);
+  $('#mapping-disclosure').open = true;
+  $('#mapping-disclosure').scrollIntoView({block:'start', behavior:'smooth'});
 });
 $('#export').addEventListener('click', async event => {
   event.preventDefault();
