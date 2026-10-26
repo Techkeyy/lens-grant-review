@@ -550,7 +550,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, export)
         if path == "/vendor/supabase.js":
             target = WEB / "vendor" / "supabase.js"
-        elif path in {"/", "/index.html", "/app.js", "/style.css"}:
+        elif path in {"/", "/index.html", "/app.js", "/style.css", "/hero-magnifier.png"}:
             target = WEB / ("index.html" if path == "/" else path.lstrip("/"))
         else:
             self.send_error(404)
@@ -559,9 +559,9 @@ class Handler(BaseHTTPRequestHandler):
             self.send_error(404)
             return
         data = target.read_bytes()
-        mime = {".html": "text/html", ".js": "text/javascript", ".css": "text/css"}[target.suffix]
+        mime = {".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".png": "image/png"}[target.suffix]
         self.send_response(200)
-        self.send_header("Content-Type", f"{mime}; charset=utf-8")
+        self.send_header("Content-Type", mime if target.suffix == ".png" else f"{mime}; charset=utf-8")
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
