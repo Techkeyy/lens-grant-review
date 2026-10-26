@@ -67,9 +67,9 @@ body[data-view="welcome"] #notice:not(:empty) { max-width:1184px; margin:18px au
 .welcome-shell { position:relative; z-index:2; display:flex; flex-direction:column; justify-content:space-between; gap:34px; max-width:1240px; min-height:calc(100svh - 72px); margin:auto; padding:clamp(52px,8vh,82px) 28px 28px; }
 .welcome-copy { max-width:700px; }
 .welcome .eyebrow { color:#e6b85c; letter-spacing:.16em; }
-.welcome-copy h1 { max-width:720px; margin:0 0 23px; color:#f9f5ed; font-family:Impact,"Arial Narrow","Segoe UI",sans-serif; font-size:clamp(57px,6.7vw,96px); font-weight:900; line-height:.94; letter-spacing:-.035em; text-transform:uppercase; }
-.welcome-copy h1 em { color:#e6b85c; font-style:normal; }
-.welcome-lede { max-width:590px; margin-bottom:0; font-size:18px; line-height:1.55; color:#e5e8e1; }
+.welcome-copy h1 { max-width:710px; margin:0 0 23px; color:#f9f5ed; font-family:"Palatino Linotype",Palatino,Georgia,serif; font-size:clamp(52px,5.4vw,78px); font-weight:700; line-height:1.02; letter-spacing:-.055em; }
+.welcome-copy h1 em { color:#e6b85c; font-style:italic; font-weight:700; white-space:nowrap; }
+.welcome-lede { max-width:590px; margin-bottom:0; font-size:19px; line-height:1.5; color:#e5e8e1; }
 .auth-gate { margin-top:25px; }
 .hero-actions { display:flex; align-items:center; gap:13px; flex-wrap:wrap; }
 .google-button { min-height:54px; padding-inline:20px; font-size:16px; color:#17231c; background:#f5eee1; border-color:#f5eee1; }
@@ -259,7 +259,7 @@ body.public-mode:not(.zetaris-allowed) #import-zetaris,body.public-mode:not(.zet
   .hero-art { height:56%; }
   .hero-art img { width:min(105vw,740px); right:-13%; top:-24%; opacity:.9; }
   .welcome-shell { min-height:calc(100svh - 62px); padding:clamp(225px,28svh,295px) 20px 22px; gap:38px; }
-  .welcome-copy h1 { max-width:590px; font-size:clamp(50px,9vw,72px); }
+  .welcome-copy h1 { max-width:590px; font-size:clamp(46px,8.5vw,66px); }
   .welcome-lede { max-width:600px; font-size:17px; }
   .hero-proof { grid-template-columns:1fr; gap:5px; padding-top:16px; }
   .hero-proof p { font-size:16px; }
@@ -288,7 +288,7 @@ body.public-mode:not(.zetaris-allowed) #import-zetaris,body.public-mode:not(.zet
   .local { padding-left:8px; }
   main { padding:0 16px 60px; }
   h1 { font-size:42px; }
-  .welcome-copy h1 { font-size:clamp(48px,12.2vw,62px); }
+  .welcome-copy h1 { font-size:clamp(42px,10.8vw,50px); }
   .welcome-lede { font-size:16px; }
   .welcome-shell { padding-inline:16px; padding-top:clamp(208px,27svh,260px); }
   .hero-art img { width:115vw; right:-17%; top:-10%; }
