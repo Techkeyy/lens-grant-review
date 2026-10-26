@@ -7,6 +7,42 @@ let selectedReviewId = null;
 let reviews = [];
 let viewEpoch = 0;
 let authEpoch = 0;
+let activeView = 'welcome';
+const arrowIcon = '<svg class="icon" aria-hidden="true"><use href="#icon-arrow"></use></svg>';
+
+function derivedView(next) {
+  if (!next?.case) return 'home';
+  if (next.result) return 'findings';
+  return next.checks?.length ? 'rerun' : 'prepare';
+}
+
+function showView(view, focus=false) {
+  const loaded = !!state.case;
+  if (view === 'findings' && !state.result) view = derivedView(state);
+  if (view === 'export' && !state.result) view = derivedView(state);
+  if (view === 'rerun' && state.result) view = 'findings';
+  if (!loaded && !['welcome','home'].includes(view)) view = 'home';
+  activeView = view;
+  document.body.dataset.view = view;
+  $('#welcome').classList.toggle('hidden', view !== 'welcome');
+  $('#how-it-works').classList.toggle('hidden', view !== 'welcome');
+  $('#start-stage').classList.toggle('hidden', view !== 'home');
+  $('#workspace').classList.toggle('hidden', !loaded || !['prepare','rerun','findings','export'].includes(view));
+  for (const [name,id] of [['prepare','#prepare-stage'],['rerun','#rerun-stage'],['findings','#results'],['export','#export-stage']]) {
+    $(id).classList.toggle('hidden', view !== name);
+  }
+  for (const button of document.querySelectorAll('[data-flow]')) {
+    const destination = button.dataset.flow;
+    button.disabled = destination === 'findings' && !state.result || destination === 'export' && !state.result;
+    button.setAttribute('aria-current', destination === view || view === 'rerun' && destination === 'prepare' ? 'step' : 'false');
+  }
+  if (focus) {
+    const target = ({home:'#start-title',prepare:'#prepare-title',rerun:'#rerun-title',findings:'#results-title',export:'#export-title',welcome:'#page-title'})[view];
+    const node = $(target);
+    node?.focus({preventScroll:true});
+    node?.scrollIntoView({block:'start',behavior:'auto'});
+  }
+}
 
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -43,28 +79,37 @@ function notice(message, error=false) {
 async function act(button, action, success) {
   const label = button.innerHTML;
   const epoch = viewEpoch;
+  const explanationKey = button.closest('.explain-form')?.dataset.key;
   button.disabled = true;
-  button.textContent = 'Working…';
+  button.textContent = 'Working...';
   notice('Working on this review. Your current records are still here.');
   try {
-    const wasLoaded = !!state.case;
     const next = await action();
     if (epoch !== viewEpoch) return;
     state = next;
+    activeView = derivedView(next);
+    if (button.id === 'check' || button.id === 'rerun-check') $('#finding-list').replaceChildren();
     render();
     notice(success);
     if (publicMode) {
       try { await refreshReviewList(); }
       catch (error) { notice(`Review saved, but the saved list could not refresh: ${error.message}`, true); }
     }
-    if (!wasLoaded && state.case) $('#workspace-title').focus();
-    else if (button.id === 'check' && state.result) $('#results-title').focus();
+    if (explanationKey) {
+      showView('findings');
+      const finding = [...document.querySelectorAll('.finding')].find(item => item.dataset.key === explanationKey);
+      const note = finding?.querySelector('.human-note');
+      note?.focus({preventScroll:true});
+      note?.scrollIntoView({block:'center',behavior:'auto'});
+    } else if (activeView === 'rerun') showView('rerun', true);
+    else if (activeView === 'prepare') showView('prepare', true);
+    else if (activeView === 'findings' && state.result) showView('findings', true);
   }
   catch (error) { if (epoch === viewEpoch) notice(error.message, true); }
   finally {
     button.disabled = false;
     if (button.isConnected) button.innerHTML = button.id === 'check'
-      ? (state.result ? 'Rerun check <span aria-hidden="true">↗</span>' : 'Check both reports <span aria-hidden="true">↗</span>')
+      ? (state.result ? 'Run check again' + arrowIcon : 'Check both reports' + arrowIcon)
       : label;
   }
 }
@@ -89,15 +134,19 @@ function inspectRecords() {
 function renderMapping() {
   const unmapped = state.case.claims.filter(claim => claim.kind === 'allocation' && !claim.source_id);
   const activities = state.case.claims.filter(claim => claim.kind === 'activity_count');
-  $('#mapping').innerHTML = `<div class="mapping-head"><h3>Confirm evidence links</h3><p class="muted">Only confirmed source IDs are used for allocation arithmetic. Activity records count only when linked to the claim.</p></div>` +
-    unmapped.map(claim => {
+  const sourceForms = unmapped.map(claim => {
       const sources = state.case.sources.filter(source => source.kind === claim.reported_kind);
-      return `<form class="mapping-form source-map" data-claim="${escapeHtml(claim.id)}"><label>${escapeHtml(claim.grant)} · ${escapeHtml(claim.id)} (${escapeHtml(claim.quantity)} ${escapeHtml(claim.unit)})</label><div class="row"><select name="source_id" required><option value="">Choose confirmed source</option>${sources.map(source=>`<option value="${escapeHtml(source.id)}">${escapeHtml(source.id)} · ${escapeHtml(source.person || source.vendor)} · ${escapeHtml(source.quantity)} ${escapeHtml(source.unit)}</option>`).join('')}</select><button class="secondary" type="submit">Confirm source</button></div></form>`;
-    }).join('') +
-    activities.map(claim => {
+      return `<form class="mapping-form source-map" data-claim="${escapeHtml(claim.id)}"><label>${escapeHtml(claim.grant)}: ${escapeHtml(claim.quantity)} ${escapeHtml(claim.unit)} has no confirmed source</label><div class="row"><select name="source_id" required><option value="">Choose a source row</option>${sources.map(source=>`<option value="${escapeHtml(source.id)}">${escapeHtml(source.id)} · ${escapeHtml(source.person || source.vendor)} · ${escapeHtml(source.quantity)} ${escapeHtml(source.unit)}</option>`).join('')}</select><button class="secondary" type="submit">Confirm source</button></div><p class="fine">Lens will not guess a match from a person's name.</p></form>`;
+    }).join('');
+  const activityForms = activities.map(claim => {
       const sources = state.case.sources.filter(source => source.kind === 'activity');
       return `<form class="mapping-form activity-map" data-claim="${escapeHtml(claim.id)}"><label>${escapeHtml(claim.grant)} · ${escapeHtml(claim.id)}: ${escapeHtml(claim.quantity)} sessions reported</label><p class="fine">Current links: ${escapeHtml(claim.evidence_ids.length)} · ${escapeHtml(claim.evidence_link_method)}</p><div class="activity-choices">${sources.map(source=>`<label><input type="checkbox" name="evidence" value="${escapeHtml(source.id)}" ${claim.evidence_ids.includes(source.id)?'checked':''}> ${escapeHtml(source.id)} · ${escapeHtml(source.date)}</label>`).join('')}</div><button class="secondary" type="submit">Save activity links</button></form>`;
     }).join('');
+  $('#mapping').innerHTML = `<p class="muted">Confirmed source IDs support allocation arithmetic. Activity rows count only when linked to a claim.</p>${sourceForms || '<p class="good-note">All allocation claims have a source ID. You can still inspect activity links below.</p>'}${activityForms ? `<details class="activity-review"><summary>Inspect activity links<svg class="icon" aria-hidden="true"><use href="#icon-chevron"></use></svg></summary>${activityForms}</details>` : ''}`;
+  $('#mapping-disclosure').open = unmapped.length > 0;
+  $('#mapping-disclosure > summary').firstChild.textContent = unmapped.length
+    ? `Review evidence links (${unmapped.length} to confirm)`
+    : 'Review evidence links (optional)';
 }
 
 function title(finding) {
@@ -131,16 +180,16 @@ function findingHtml(finding, open=false) {
   }).join('');
   const note = finding.human_explanation;
   const status = ({needs_correction:'Needs correction',needs_evidence:'Needs evidence',needs_review:'Needs review',clear:'Totals fit'})[finding.status] || finding.status.replaceAll('_',' ');
-  return `<details class="finding ${escapeHtml(finding.status)}" data-key="${escapeHtml(finding.key)}" ${open ? 'open' : ''}>
-    <summary><div class="finding-head"><h3>${escapeHtml(title(finding))}</h3><span class="badge">${escapeHtml(status)}</span></div><p class="finding-summary">${escapeHtml(finding.message)}</p></summary>
-    <div class="finding-body"><div class="math">${arithmetic(finding)}</div>
-    <div class="evidence"><div><h4>What the report claims</h4>${currentClaims}${finding.claims.map(record).join('')}</div><div><h4>What the source records show</h4>${finding.sources.length ? finding.sources.map(record).join('') : '<p class="muted">No confirmed source row. Choose a source before treating this claim as verified.</p>'}</div></div>
-    ${finding.claims.some(ref => ['linked source','user-confirmed source link'].includes(state.case.claims.find(c=>c.id===ref.id)?.identity_origin)) ? '<p class="fine">At least one draft omitted person or vendor. Identity shown in analysis came from the linked source ID; the report did not independently state it.</p>' : ''}
-    ${note ? `<p class="human-note"><strong>Human explanation</strong> · ${escapeHtml(note.text)}<br><small>Saved against source revision ${escapeHtml(note.source_revision)}. The finding still requires human judgment.</small></p>` : ''}
-    <div class="review-actions">
-      ${claimOptions ? `<form class="correct-form" data-key="${escapeHtml(finding.key)}"><label>Correct a report allocation</label><div class="row"><select name="claim_id" aria-label="Claim to correct">${claimOptions}</select><input name="quantity" type="number" min="0" step="any" placeholder="New amount" required aria-label="New quantity"><button type="submit" class="secondary">Save correction</button></div></form>` : ''}
-      ${finding.status !== 'clear' ? `<form class="explain-form" data-key="${escapeHtml(finding.key)}"><label>Record an explanation for your team</label><textarea name="explanation" maxlength="2000" required placeholder="What should a reviewer know?"></textarea><button type="submit" class="secondary">Save explanation</button></form>` : ''}
-    </div></div>
+  return `<details class="finding ${escapeHtml(finding.status)}" name="lens-finding" data-key="${escapeHtml(finding.key)}" ${open ? 'open' : ''}>
+    <summary><div class="finding-head"><div><h3>${escapeHtml(title(finding))}</h3><p class="finding-summary">${escapeHtml(finding.message)}</p></div><span class="badge">${escapeHtml(status)}</span></div><svg class="icon" aria-hidden="true"><use href="#icon-chevron"></use></svg></summary>
+    <div class="finding-body"><div class="finding-work"><div class="math">${arithmetic(finding)}</div><div class="finding-proof">
+      <div class="evidence"><div><h4>What the report claims</h4>${currentClaims}${finding.claims.map(record).join('')}</div><div><h4>What the source records show</h4>${finding.sources.length ? finding.sources.map(record).join('') : '<p class="muted">No confirmed source row. Choose a source before treating this claim as verified.</p>'}</div></div>
+      ${finding.claims.some(ref => ['linked source','user-confirmed source link'].includes(state.case.claims.find(c=>c.id===ref.id)?.identity_origin)) ? '<p class="fine">At least one draft omitted person or vendor. Identity shown in analysis came from the linked source ID; the report did not independently state it.</p>' : ''}
+    </div><aside class="decision-panel"><p class="eyebrow">YOUR NEXT DECISION</p>
+      ${note ? `<p class="human-note" tabindex="-1"><strong>Explanation saved</strong><br>${escapeHtml(note.text)}<br><small>Source revision ${escapeHtml(note.source_revision)}. This note does not clear the question.</small></p>` : ''}
+      <div class="review-actions">${claimOptions && finding.status !== 'clear' ? `<form class="correct-form" data-key="${escapeHtml(finding.key)}"><label>Correct a report claim</label><select name="claim_id" aria-label="Claim to correct">${claimOptions}</select><label for="qty-${escapeHtml(finding.key)}">New amount</label><input id="qty-${escapeHtml(finding.key)}" name="quantity" type="number" min="0" step="any" required aria-label="New amount"><button type="submit" class="primary">Save correction</button></form>` : ''}
+      ${finding.status !== 'clear' ? `<form class="explain-form" data-key="${escapeHtml(finding.key)}"><label>Or record an explanation</label><textarea name="explanation" maxlength="2000" required placeholder="What should your team know?"></textarea><button type="submit" class="secondary">Save explanation</button></form>` : '<p class="good-note">This check found no quantity gap for these linked rows. You can inspect the evidence or continue to export.</p>'}</div>
+    </aside></div></div>
   </details>`;
 }
 
@@ -225,26 +274,31 @@ function renderInvestigationTrace() {
 function render() {
   const loaded = !!state.case;
   document.body.classList.toggle('has-case', loaded);
-  $('#workspace').classList.toggle('hidden', !loaded);
-  $('#saved').textContent = state.saved_at ? `Saved ${new Date(state.saved_at).toLocaleString()}` : '';
-  if (!loaded) return;
+  const savedLabel = state.saved_at ? `Saved ${new Date(state.saved_at).toLocaleString()}` : '';
+  $('#saved').textContent = savedLabel;
+  $('#workspace-saved').textContent = savedLabel;
+  if (!loaded) { showView(activeView === 'welcome' ? 'welcome' : 'home'); return; }
   $('#data-label').textContent = state.case.label;
   $('#import-summary').textContent = `${state.case.claims.length} report claims and ${state.case.sources.length} source records from ${Object.keys(state.files).length} ${state.zetaris ? 'Zetaris table snapshots' : 'CSV files'}. Period: ${state.case.reporting_period.start} to ${state.case.reporting_period.end}.`;
   renderZetarisEvidence();
   renderInvestigationTrace();
   inspectRecords();
   renderMapping();
-  $('#results').classList.toggle('hidden', !state.result);
   renderAdaptiveInvestigation();
-  $('#check').innerHTML = state.result ? 'Rerun check <span aria-hidden="true">↗</span>' : 'Check both reports <span aria-hidden="true">↗</span>';
+  $('#check').innerHTML = state.result ? 'Run check again' + arrowIcon : 'Check both reports' + arrowIcon;
   $('#check-state').textContent = state.result ? `Checked revision ${state.revision}. Review remains saved after refresh.` : state.corrections?.length ? 'Correction saved. Rerun to see the updated result.' : 'Ready to check the imported records.';
   if (state.result) {
-    const openKeys = new Set([...document.querySelectorAll('.finding[open]')].map(item => item.dataset.key));
+    const currentKeys = new Set(state.result.findings.map(item => item.key));
+    const openKeys = new Set([...document.querySelectorAll('.finding[open]')].map(item => item.dataset.key).filter(key => currentKeys.has(key)));
     const firstQuestion = state.result.findings.findIndex(item => item.status !== 'clear');
     $('#finding-list').innerHTML = state.result.findings.map((finding,index) => findingHtml(finding, openKeys.has(finding.key) || (!openKeys.size && index === (firstQuestion < 0 ? 0 : firstQuestion)))).join('');
+    const open = state.result.findings.filter(item => item.status !== 'clear').length;
+    const clear = state.result.findings.length - open;
+    $('#finding-summary').innerHTML = `<strong>${open} ${open === 1 ? 'question' : 'questions'} to review</strong><span>${clear} ${clear === 1 ? 'check' : 'checks'} fit the supplied evidence</span>`;
   }
   const m = state.meterless || {status:'unknown'};
   $('#integration-status').textContent = `Review history: Meterless ${m.status}${m.event_count === undefined ? '' : ` · ${m.event_count} events`}. Analysis: local deterministic reconciliation. Zetaris grant-data query: ${state.zetaris ? 'five tables captured for this review; snapshot hashes and request IDs saved. Tables were not transactionally frozen.' : 'not connected to this review.'}`;
+  showView(activeView);
 }
 
 function reviewStatePath() {
@@ -287,17 +341,20 @@ async function selectReview(reviewId) {
   const epoch = ++viewEpoch;
   selectedReviewId = reviewId || null;
   state = {phase:'empty'};
+  activeView = 'home';
   render();
   renderReviewPicker();
   notice('');
   if (!selectedReviewId) return;
-  notice('Opening your saved review…');
+  notice('Opening your saved review...');
   try {
     const next = await request(reviewStatePath());
     if (epoch !== viewEpoch) return;
     state = next;
+    activeView = derivedView(next);
     render();
     notice('Saved review opened.');
+    if (next.case) showView(activeView, true);
   } catch (error) {
     if (epoch === viewEpoch) notice(`Could not open this review: ${error.message}`, true);
   }
@@ -309,10 +366,12 @@ function setSignedOutView() {
   selectedReviewId = null;
   reviews = [];
   state = {phase:'empty'};
+  activeView = 'welcome';
   render();
   renderReviewPicker();
   $('#account-controls').classList.add('hidden');
   $('#account-email').textContent = '';
+  $('#account-name').textContent = '';
   document.body.classList.remove('zetaris-allowed');
   $('#own-data-intro').textContent = 'Review two draft reports against the timesheets, receipts and activity log you upload.';
   $('#auth-gate').classList.remove('hidden');
@@ -337,12 +396,16 @@ async function syncSession(session) {
       ? 'Review two draft reports against timesheets, receipts and activity records you upload, or query five registered Zetaris tables.'
       : 'Review two draft reports against the timesheets, receipts and activity log you upload.';
     $('#account-email').textContent = data.user.email || 'Signed in';
+    const metadata = session.user?.user_metadata || {};
+    const greeting = String(metadata.full_name || metadata.name || data.user.email?.split('@')[0] || 'Your account').trim().split(/\s+/)[0];
+    $('#account-name').textContent = `Hello, ${greeting}`;
     $('#account-controls').classList.remove('hidden');
     $('#auth-gate').classList.add('hidden');
     document.body.classList.remove('auth-required', 'booting');
     if (changedUser) {
       selectedReviewId = null;
       state = {phase:'empty'};
+      activeView = 'home';
       render();
       await refreshReviewList();
       if (epoch !== authEpoch) return;
@@ -375,6 +438,7 @@ async function boot() {
     if (!publicMode) {
       document.body.classList.remove('booting');
       state = await request('/api/state');
+      activeView = derivedView(state);
       render();
       return;
     }
@@ -420,6 +484,11 @@ $('#sign-out').addEventListener('click', async () => {
   } catch (error) { notice(`Could not sign out: ${error.message}`, true); }
 });
 $('#review-select').addEventListener('change', event => selectReview(event.currentTarget.value));
+$('#back-to-reviews').addEventListener('click', () => showView('home', true));
+document.querySelectorAll('[data-flow]').forEach(button => button.addEventListener('click', () => showView(button.dataset.flow, true)));
+$('#go-export').addEventListener('click', () => showView('export', true));
+$('#return-to-findings').addEventListener('click', () => showView('findings', true));
+$('#rerun-check').addEventListener('click', event => act(event.currentTarget, () => request('/api/check', {}), 'Check complete. Review the updated questions below.'));
 $('#new-review').addEventListener('click', async event => {
   const button = event.currentTarget;
   button.disabled = true;
@@ -430,16 +499,20 @@ $('#new-review').addEventListener('click', async event => {
   } catch (error) { notice(`Could not create a review: ${error.message}`, true); }
   finally { button.disabled = false; }
 });
-$('#sample').addEventListener('click', event => act(event.currentTarget, async () => {
-  await ensureReview('Sample review');
-  return request('/api/sample', {});
-}, 'Synthetic case loaded. Inspect its rows, then run a check.'));
+$('#sample').addEventListener('click', event => {
+  if (state.case && !window.confirm('Replace the current case in this review with the synthetic example? Export it first if you need a copy.')) return;
+  act(event.currentTarget, async () => {
+    await ensureReview('Sample review');
+    return request('/api/sample', {});
+  }, 'Synthetic case loaded. Check the imported records, then run a review.');
+});
 $('#import-zetaris').addEventListener('click', event => act(event.currentTarget, async () => {
   await ensureReview('Zetaris review');
   return request('/api/import-zetaris', {period: {start: $('#period-start').value, end: $('#period-end').value}});
 }, 'Complete Zetaris query snapshot imported. Inspect source IDs and confirm activity links before checking.'));
 $('#import-form').addEventListener('submit', async event => {
   event.preventDefault();
+  if (state.case && !window.confirm('Replace the current case in this review with these CSV files? Export it first if you need a copy.')) return;
   const files = {};
   for (const input of document.querySelectorAll('[data-file]')) {
     if (!input.files[0]) return notice(`Choose ${input.dataset.file}`, true);
@@ -451,7 +524,7 @@ $('#import-form').addEventListener('submit', async event => {
     return request('/api/import', {files, period});
   }, 'Five CSVs imported. Inspect rows, then run a check.');
 });
-$('#check').addEventListener('click', event => act(event.currentTarget, () => request('/api/check', {}), 'Check complete. Open each finding to inspect the original rows and arithmetic.'));
+$('#check').addEventListener('click', event => act(event.currentTarget, () => request('/api/check', {}), 'Check complete. Review the questions and source rows below.'));
 $('#mapping').addEventListener('submit', event => {
   const form = event.target;
   if (form.matches('.source-map')) {
