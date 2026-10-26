@@ -4,7 +4,11 @@ Lens helps a small charity's grant reviewer check two draft funder reports again
 
 > "Do the hours, costs, and workshops in these reports have the records to support them?"
 
-Lens is a local review workspace for the Open Agent Hackathon 2026, Track 02, *The Agent That Can Explain Why*. It raises questions for a person to investigate. It does not certify compliance, detect fraud, or submit a report to a funder.
+Lens is a grant review workspace for the Open Agent Hackathon 2026, Track 02, *The Agent That Can Explain Why*. It raises questions for a person to investigate. It does not certify compliance, detect fraud, or submit a report to a funder.
+
+## Public deployment status
+
+The source is published at [Techkeyy/lens-grant-review](https://github.com/Techkeyy/lens-grant-review). A Free Render service has been created at [lens-grant-review.onrender.com](https://lens-grant-review.onrender.com). The Docker image built successfully, but the service is intentionally closed until its Supabase credentials are set in Render. Google sign-in and the live two-account user acceptance test are still pending. Do not treat the public URL as a finished demo until that test passes.
 
 ## Why shared allocation matters
 
