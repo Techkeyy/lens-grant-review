@@ -3,52 +3,68 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Lens | Grant report review</title>
+  <meta name="theme-color" content="#f6f2e9">
+  <title>Lens | Grant evidence review</title>
   <link rel="stylesheet" href="/style.css">
   <script src="/app.js" defer></script>
 </head>
-<body>
-  <header class="top"><div class="brand">lens<span>.</span></div><div class="top-note">Grant report review workspace <span class="local">Local preview</span></div></header>
-  <main>
-    <section class="intro">
-      <p class="eyebrow">BEFORE THE REPORT GOES OUT</p>
-      <h1>Know which claims need another look.</h1>
-      <p>Bring two draft grant reports together with their timesheets, receipts and activity log. Lens compares shared records, shows its working, and keeps your review decisions.</p>
-      <p class="caution">Lens raises review questions. It does not certify a report or accuse anyone of wrongdoing.</p>
+<body class="booting">
+  <a class="skip-link" href="#main">Skip to review</a>
+  <header class="top"><div class="top-inner"><div class="brand" aria-label="Lens home">lens<span>.</span></div><div class="top-note"><span>Grant evidence review</span><span id="local-label" class="local">Local preview</span><div id="account-controls" class="account-controls hidden"><span id="account-email"></span><button id="sign-out" type="button">Sign out</button></div></div></div></header>
+  <main id="main">
+    <section class="intro" aria-labelledby="page-title">
+      <div class="intro-index" aria-hidden="true"><span>CASE NOTES</span><span>01 / 03</span></div>
+      <div class="intro-copy"><p class="eyebrow">BEFORE THE REPORT GOES OUT</p><h1 id="page-title">A second look at what the records support.</h1><p class="intro-lede">Lens compares draft grant reports with timesheets, receipts and activity notes. See the records behind each question, then correct a claim or explain a gap before sending.</p><p class="caution">Lens raises questions for a person to review. It does not certify a report or accuse anyone of wrongdoing.</p></div>
     </section>
     <div id="notice" role="status" aria-live="polite"></div>
-    <section class="stage" aria-labelledby="start-title">
-      <div class="section-head"><div><p class="eyebrow">01 / RECORDS</p><h2 id="start-title">Start with the source files</h2></div><span id="saved" class="meta"></span></div>
-      <p class="muted">Five CSVs are needed. Source IDs must be stable across files. Uploading a new set replaces the current local review.</p>
+    <section id="auth-gate" class="auth-gate hidden" aria-labelledby="auth-title">
+      <p class="eyebrow">YOUR PRIVATE WORKSPACE</p><h2 id="auth-title">Sign in to start a review.</h2>
+      <p>Your reports and review decisions are saved to your account, so you can return from another device. Try the invented sample after signing in, or bring your own records.</p>
+      <button id="google-sign-in" class="primary" type="button">Continue with Google <span aria-hidden="true">↗</span></button>
+      <p class="fine">Lens asks Google for basic account identity. A review is visible only to its signed-in owner.</p>
+    </section>
+    <section id="review-picker" class="review-picker hidden" aria-labelledby="review-picker-title">
+      <div><p class="eyebrow">SAVED WORK</p><h2 id="review-picker-title">Your reviews</h2><p id="review-picker-help" class="muted">Choose a saved review, or start a new one below.</p></div>
+      <div class="review-picker-actions"><label for="review-select">Open review</label><select id="review-select"><option value="">New review</option></select><button id="new-review" class="secondary" type="button">New review</button></div>
+    </section>
+    <section id="start-stage" class="stage" aria-labelledby="start-title">
+      <div class="section-head"><div><p class="eyebrow">01 / START A REVIEW</p><h2 id="start-title">Choose the records to check</h2></div><span id="saved" class="meta"></span></div>
       <div class="start-grid">
-        <form id="import-form" class="upload-panel">
-          <div class="file-grid">
-            <label>Draft report A <small>reading_futures_draft.csv</small><input required type="file" accept=".csv,text/csv" data-file="reading_futures_draft.csv"></label>
-            <label>Draft report B <small>community_learning_draft.csv</small><input required type="file" accept=".csv,text/csv" data-file="community_learning_draft.csv"></label>
-            <label>Timesheets <small>timesheets.csv</small><input required type="file" accept=".csv,text/csv" data-file="timesheets.csv"></label>
-            <label>Receipts <small>receipts.csv</small><input required type="file" accept=".csv,text/csv" data-file="receipts.csv"></label>
-            <label>Activity log <small>activity_log.csv</small><input required type="file" accept=".csv,text/csv" data-file="activity_log.csv"></label>
-          </div>
-          <div class="period"><label>Period starts<input id="period-start" type="date" value="2026-07-01" required></label><label>Period ends<input id="period-end" type="date" value="2026-07-31" required></label></div>
-          <button class="primary" type="submit">Import my records</button>
-          <button id="import-zetaris" class="secondary" type="button">Import registered Zetaris tables</button>
-          <p class="fine">Requires all five grant tables and local API configuration. Every import replaces the current review with a new query snapshot; it does not change Zetaris data.</p>
-        </form>
-        <aside class="sample-panel"><p class="eyebrow">TRY THE WORKFLOW</p><h3>Sample case</h3><p>A clearly synthetic set of two grant reports and three source files. It contains one overallocated timesheet, one valid split, and a workshop evidence gap.</p><button id="sample" type="button" class="secondary">Load sample case</button><p class="fine">Loading the sample replaces the current local review.</p></aside>
+        <div class="sample-panel"><p class="option-index">01 <span>Synthetic example</span></p><h3>See a complete case in a minute.</h3><p>Two reports share a timesheet. Follow one excess claim and a workshop evidence gap, then make a correction.</p><button id="sample" type="button" class="primary">Open sample case <span aria-hidden="true">↗</span></button><p class="fine">Sample records are invented for demonstration. Opening them replaces the current review.</p></div>
+        <div class="own-panel"><p class="option-index">02 <span>Your source files</span></p><h3>Bring your own evidence.</h3><p id="own-data-intro">Review two draft reports against their timesheets, receipts and activity log, or query five registered Zetaris tables.</p>
+          <details id="own-data"><summary>Set up a review with your records <span aria-hidden="true">+</span></summary>
+            <form id="import-form" class="upload-panel">
+              <p class="fine">Use stable source IDs across files. A new import replaces the current review.</p>
+              <div class="file-grid">
+                <label>Draft report A <small>reading_futures_draft.csv</small><input required type="file" accept=".csv,text/csv" data-file="reading_futures_draft.csv"></label>
+                <label>Draft report B <small>community_learning_draft.csv</small><input required type="file" accept=".csv,text/csv" data-file="community_learning_draft.csv"></label>
+                <label>Timesheets <small>timesheets.csv</small><input required type="file" accept=".csv,text/csv" data-file="timesheets.csv"></label>
+                <label>Receipts <small>receipts.csv</small><input required type="file" accept=".csv,text/csv" data-file="receipts.csv"></label>
+                <label>Activity log <small>activity_log.csv</small><input required type="file" accept=".csv,text/csv" data-file="activity_log.csv"></label>
+              </div>
+              <div class="period"><label>Period starts<input id="period-start" type="date" value="2026-07-01" required></label><label>Period ends<input id="period-end" type="date" value="2026-07-31" required></label></div>
+              <div class="import-actions"><button class="primary" type="submit">Import five CSVs</button><button id="import-zetaris" class="secondary" type="button">Import registered Zetaris tables</button></div>
+              <p id="zetaris-help" class="fine">Zetaris requires five registered grant tables and server configuration. It creates a query snapshot for this review and does not change the source tables.</p>
+            </form>
+          </details>
+        </div>
       </div>
     </section>
     <section id="workspace" class="stage hidden" aria-labelledby="workspace-title">
-      <div class="section-head"><div><p class="eyebrow">02 / INVESTIGATION</p><h2 id="workspace-title">Review the imported records</h2></div><span id="data-label" class="data-label"></span></div>
-      <p id="import-summary" class="muted"></p>
-      <div id="integration-status" class="integration-status" aria-live="polite"></div>
-      <aside id="zetaris-evidence" class="zetaris-evidence hidden" aria-label="Zetaris evidence snapshot"></aside>
-      <details id="investigation-trace" class="investigation-trace hidden"><summary>Inspect the investigation steps</summary><p class="fine">This log records executed queries, source links, a bounded follow-up, deterministic checks, and Meterless writes. It does not certify a report.</p><ol id="trace-list"></ol></details>
-      <details id="records"><summary>Inspect imported rows and source locations</summary><div id="record-list"></div></details>
+      <div class="section-head case-head"><div><p class="eyebrow">02 / CASE FILE</p><h2 id="workspace-title" tabindex="-1">Review the imported records</h2></div><span id="data-label" class="data-label"></span></div>
+      <p id="import-summary" class="case-summary"></p>
+      <div class="review-sequence" aria-label="Review sequence"><span>Confirm links</span><span>Check reports</span><span>Resolve questions</span></div>
       <div id="mapping"></div>
-      <div class="action-row"><button id="check" class="primary">Check both reports</button><p id="check-state" class="muted"></p></div>
-      <div id="results" class="hidden"><div class="section-head"><div><p class="eyebrow">03 / YOUR REVIEW</p><h2>Questions and supporting records</h2></div><a id="export" class="text-link" href="/api/export" download="lens-review.json">Download review JSON</a></div><p class="muted">A clear allocation means the linked totals fit within the supplied source quantity. It does not certify funder compliance. Your explanations remain human notes, not automatic resolutions.</p><aside id="adaptive-investigation" class="adaptive-investigation hidden" aria-label="Selected follow-up investigation"></aside><div id="finding-list"></div></div>
+      <div class="action-row"><button id="check" class="primary" type="button">Check both reports <span aria-hidden="true">↗</span></button><p id="check-state" class="muted" role="status"></p></div>
+      <div id="results" class="hidden"><div class="section-head result-head"><div><p class="eyebrow">03 / FINDINGS</p><h2 id="results-title" tabindex="-1">Questions and supporting records</h2></div><a id="export" class="text-link" href="/api/export" download="lens-review.json">Download review JSON ↗</a></div><p class="result-caveat">A clear allocation means the linked totals fit within the supplied source quantity. It does not certify funder compliance. Your explanations remain human notes.</p><div id="finding-list"></div><details id="adaptive-investigation" class="adaptive-investigation hidden" aria-label="Selected follow-up investigation"></details></div>
+      <div class="proof-section"><div class="section-head"><div><p class="eyebrow">SOURCE NOTES</p><h2>How Lens reached this view</h2></div></div><p class="muted">Open the records and investigation steps whenever you need to check the trail behind a finding.</p>
+        <div id="integration-status" class="integration-status" aria-live="polite"></div>
+        <aside id="zetaris-evidence" class="zetaris-evidence hidden" aria-label="Zetaris evidence snapshot"></aside>
+        <details id="investigation-trace" class="investigation-trace hidden"><summary>Investigation steps</summary><p class="fine">This log records executed queries, source links, a bounded follow-up, deterministic checks and Meterless writes. It does not certify a report.</p><ol id="trace-list"></ol></details>
+        <details id="records"><summary>Imported rows and source locations</summary><div id="record-list"></div></details>
+      </div>
     </section>
   </main>
-  <footer>Lens local preview · Records are stored on this computer in the app's data folder.</footer>
+  <footer><div><strong>lens.</strong><span>A second pair of eyes before the report goes out.</span></div><p>Local preview. Review data is stored on this computer. Lens does not make a compliance determination.</p></footer>
 </body>
 </html>

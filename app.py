@@ -1,21 +1,28 @@
-"""Local Lens review workspace. Run: python app.py"""
+"""Lens review server. Local mode binds to localhost; public mode requires Auth."""
 
 from __future__ import annotations
 
 import csv
 import io
 import json
+import os
 import sqlite3
 import subprocess
+import tempfile
+import threading
+import time
 import uuid
 import re
+from contextvars import ContextVar
 from decimal import Decimal, InvalidOperation
-from contextlib import closing
+from contextlib import closing, contextmanager
 from datetime import datetime, timezone
 from hashlib import sha256
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
+
+import accounts
 
 from lens_core import analyze_case
 from lens_investigator import investigate
@@ -28,6 +35,78 @@ ROOT = Path(__file__).resolve().parent
 WEB = ROOT / "web"
 DB = ROOT / "data" / "lens.sqlite3"
 METERLESS_STORE = ROOT / "data" / "meterless"
+REQUEST_REVIEW = ContextVar("request_review", default=None)
+PUBLIC_ACTION_LOCK = threading.Lock()
+PUBLIC_ACTIVE_REVIEWS = set()
+PUBLIC_ACTION_TIMES = {}
+PUBLIC_GLOBAL_TIMES = []
+EXPENSIVE_ACTIONS = {"/api/sample", "/api/import", "/api/import-zetaris", "/api/check"}
+MAX_PUBLIC_REVIEWS = 5
+PUBLIC_ACTION_WINDOW_SECONDS = 300
+MAX_PUBLIC_ACTIONS_PER_USER = 12
+MAX_PUBLIC_ACTIONS_GLOBAL = 60
+MAX_PUBLIC_IMPORT_BYTES = 100_000
+MAX_PUBLIC_ROWS_PER_FILE = 200
+MAX_PUBLIC_SAVED_BYTES = 750_000
+METERLESS_GATE = threading.BoundedSemaphore(1)
+ZETARIS_GATE = threading.BoundedSemaphore(1)
+
+
+@contextmanager
+def public_service_slot(gate, service):
+    acquired = False
+    if accounts.public_mode():
+        acquired = gate.acquire(blocking=False)
+        if not acquired:
+            raise accounts.Busy(f"{service} is busy. Please try again shortly.")
+    try:
+        yield
+    finally:
+        if acquired:
+            gate.release()
+
+
+def claim_public_action(owner, review_id):
+    """Bound work on the single free-host process; return an HTTP status on denial."""
+    now = time.monotonic()
+    key = (owner, review_id)
+    with PUBLIC_ACTION_LOCK:
+        if key in PUBLIC_ACTIVE_REVIEWS:
+            return 409
+        cutoff = now - PUBLIC_ACTION_WINDOW_SECONDS
+        PUBLIC_GLOBAL_TIMES[:] = [instant for instant in PUBLIC_GLOBAL_TIMES if instant > cutoff]
+        for user, instants in list(PUBLIC_ACTION_TIMES.items()):
+            fresh = [instant for instant in instants if instant > cutoff]
+            if fresh:
+                PUBLIC_ACTION_TIMES[user] = fresh
+            else:
+                del PUBLIC_ACTION_TIMES[user]
+        if (len(PUBLIC_ACTION_TIMES.get(owner, [])) >= MAX_PUBLIC_ACTIONS_PER_USER or
+                len(PUBLIC_GLOBAL_TIMES) >= MAX_PUBLIC_ACTIONS_GLOBAL):
+            return 429
+        PUBLIC_ACTIVE_REVIEWS.add(key)
+        PUBLIC_ACTION_TIMES.setdefault(owner, []).append(now)
+        PUBLIC_GLOBAL_TIMES.append(now)
+    return None
+
+
+def release_public_action(owner, review_id):
+    with PUBLIC_ACTION_LOCK:
+        PUBLIC_ACTIVE_REVIEWS.discard((owner, review_id))
+
+
+def enforce_public_import_limits(files):
+    if not accounts.public_mode():
+        return
+    if not isinstance(files, dict):
+        raise ValueError("Five named CSV file contents are required")
+    if set(files) != set(REQUIRED) or any(not isinstance(content, str) for content in files.values()):
+        raise ValueError("Upload the five required CSV files")
+    if sum(len(content.encode("utf-8")) for content in files.values()) > MAX_PUBLIC_IMPORT_BYTES:
+        raise accounts.PayloadTooLarge("The five CSV files must total at most 100 KB on the public demo.")
+    for name, content in files.items():
+        if sum(1 for _ in csv.reader(io.StringIO(content))) - 1 > MAX_PUBLIC_ROWS_PER_FILE:
+            raise accounts.PayloadTooLarge(f"{name}: public demo allows at most 200 data rows")
 REQUIRED = (
     "reading_futures_draft.csv",
     "community_learning_draft.csv",
@@ -46,6 +125,9 @@ def connection():
 
 
 def read_state():
+    review = REQUEST_REVIEW.get()
+    if review is not None:
+        return review["state"]
     with closing(connection()) as db:
         row = db.execute("SELECT state FROM workspace WHERE id=1").fetchone()
     return json.loads(row[0]) if row else {"phase": "empty", "revision": 0}
@@ -53,6 +135,16 @@ def read_state():
 
 def save_state(state):
     state["saved_at"] = datetime.now(timezone.utc).isoformat()
+    review = REQUEST_REVIEW.get()
+    if review is not None:
+        if accounts.public_mode():
+            saved_bytes = len(json.dumps({"state": state, "meterless_data": review["meterless_data"]}).encode("utf-8"))
+            if saved_bytes > MAX_PUBLIC_SAVED_BYTES:
+                raise accounts.PayloadTooLarge("This review has reached the public demo storage limit. Export it and start a smaller review.")
+        review["version"] = accounts.save_review(review["owner"], review["id"], state,
+                                                   review["version"], review["meterless_data"], DB)
+        review["state"] = state
+        return
     with closing(connection()) as db:
         db.execute("INSERT INTO workspace(id,state) VALUES(1,?) ON CONFLICT(id) DO UPDATE SET state=excluded.state", (json.dumps(state),))
         db.commit()
@@ -60,8 +152,29 @@ def save_state(state):
 
 def meterless(action, payload, namespace):
     """Call the actual Meterless World Model bridge; never return mock success."""
+    with public_service_slot(METERLESS_GATE, "Meterless"):
+        return _meterless(action, payload, namespace)
+
+
+def _meterless(action, payload, namespace):
+    review = REQUEST_REVIEW.get()
+    if review is not None and accounts.public_mode():
+        with tempfile.TemporaryDirectory(prefix="lens-meterless-") as scratch:
+            store = Path(scratch)
+            event_file = store / ".world" / f"{namespace}.json"
+            if review["meterless_data"] is not None:
+                event_file.parent.mkdir(parents=True, exist_ok=True)
+                event_file.write_text(json.dumps(review["meterless_data"]), encoding="utf-8")
+            result = _meterless_process(action, payload, namespace, store)
+            if event_file.exists():
+                review["meterless_data"] = json.loads(event_file.read_text(encoding="utf-8"))
+            return result
     METERLESS_STORE.mkdir(parents=True, exist_ok=True)
-    command = ["node", "--experimental-transform-types", "bridge.ts", str(METERLESS_STORE), namespace, action]
+    return _meterless_process(action, payload, namespace, METERLESS_STORE)
+
+
+def _meterless_process(action, payload, namespace, store):
+    command = ["node", "--experimental-transform-types", "bridge.ts", str(store), namespace, action]
     try:
         process = subprocess.run(command, input=json.dumps(payload), text=True, capture_output=True,
                                  cwd=ROOT / "meterless", timeout=30)
@@ -118,7 +231,7 @@ def record_meterless_findings(state):
 
 def record_meterless_human(state, finding_id, explanation):
     result = meterless("correction", {"id": uuid.uuid4().hex, "findingId": finding_id,
-                                      "actor": "local grant reviewer", "explanation": explanation,
+                                      "actor": "grant reviewer", "explanation": explanation,
                                       "observedAt": datetime.now(timezone.utc).isoformat()}, state["namespace"])
     audit = meterless("audit", {}, state["namespace"])
     state["meterless"] = {"status": "live", "last_action": "human decision recorded", "event_count": audit["eventCount"]}
@@ -298,7 +411,8 @@ def run_investigation(state):
             client = ZetarisClient(config)
         except ValueError:
             pass  # Persist an unavailable probe without exposing connection details.
-    probe = investigate(state["result"]["findings"], state.get("zetaris"), client, tables)
+    with public_service_slot(ZETARIS_GATE, "Zetaris"):
+        probe = investigate(state["result"]["findings"], state.get("zetaris"), client, tables)
     state["investigation"] = probe
     if probe:
         summary = ("Completed one bounded Zetaris follow-up."
@@ -347,8 +461,52 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _api_error(self, exc):
+        status = (401 if isinstance(exc, accounts.Unauthorized) else
+                  404 if isinstance(exc, accounts.NotFound) else
+                  413 if isinstance(exc, accounts.PayloadTooLarge) else
+                  429 if isinstance(exc, accounts.Busy) else
+                  409 if isinstance(exc, accounts.Conflict) else 503)
+        self._json(status, {"error": str(exc)})
+
+    def _load_review(self, user, review_id):
+        if not review_id:
+            if accounts.public_mode():
+                raise ValueError("Choose a review first")
+            return None
+        row = accounts.read_review(user["id"], review_id, DB)
+        return REQUEST_REVIEW.set({"owner": user["id"], "id": row["id"], "state": row["state"],
+                                   "version": row["row_version"], "meterless_data": row.get("meterless_data")})
+
     def do_GET(self):
         path = urlparse(self.path).path
+        if path == "/api/config":
+            try:
+                return self._json(200, accounts.public_config())
+            except accounts.StorageError as exc:
+                return self._api_error(exc)
+        if path.startswith("/api/"):
+            try:
+                user = accounts.authenticate(self.headers.get("Authorization"))
+                if path == "/api/session":
+                    demo_owner = os.environ.get("LENS_ZETARIS_DEMO_OWNER_ID")
+                    can_import_zetaris = bool(demo_owner and user["id"] == demo_owner and
+                                              os.environ.get("ZETARIS_API_KEY"))
+                    return self._json(200, {"user": user, "can_import_zetaris": can_import_zetaris})
+                if path == "/api/reviews":
+                    return self._json(200, {"reviews": accounts.list_reviews(user["id"], DB)})
+                review_id = parse_qs(urlparse(self.path).query).get("review_id", [None])[0]
+                token = self._load_review(user, review_id)
+                try:
+                    return self._review_get(path)
+                finally:
+                    if token is not None:
+                        REQUEST_REVIEW.reset(token)
+            except (accounts.StorageError, ValueError) as exc:
+                return self._api_error(exc) if isinstance(exc, accounts.StorageError) else self._json(400, {"error": str(exc)})
+        return self._review_get(path)
+
+    def _review_get(self, path):
         if path == "/api/state":
             state = read_state()
             if state.get("namespace"):
@@ -361,12 +519,16 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/integrations":
             state = read_state()
             data_status = "captured_snapshot" if state.get("zetaris", {}).get("status") == "queried" else "not_connected_to_this_review"
-            try:
-                zetaris = ZetarisClient(ZetarisConfig.from_environment()).query("SELECT 1 AS one")
-                z = {"status": zetaris.status, "message": zetaris.message, "request_id": zetaris.request_id,
-                     "data_query_status": data_status}
-            except ValueError as exc:
-                z = {"status": "error", "message": str(exc), "data_query_status": data_status}
+            if accounts.public_mode() and REQUEST_REVIEW.get()["owner"] != os.environ.get("LENS_ZETARIS_DEMO_OWNER_ID"):
+                z = {"status": "owner_demo_only", "data_query_status": data_status}
+            else:
+                try:
+                    with public_service_slot(ZETARIS_GATE, "Zetaris"):
+                        zetaris = ZetarisClient(ZetarisConfig.from_environment()).query("SELECT 1 AS one")
+                    z = {"status": zetaris.status, "message": zetaris.message, "request_id": zetaris.request_id,
+                         "data_query_status": data_status}
+                except ValueError as exc:
+                    z = {"status": "error", "message": str(exc), "data_query_status": data_status}
             if state.get("namespace"):
                 try:
                     audit = meterless("audit", {}, state["namespace"])
@@ -386,8 +548,14 @@ class Handler(BaseHTTPRequestHandler):
             export["trace"] = state.get("trace", [])
             export["investigation"] = state.get("investigation")
             return self._json(200, export)
-        target = WEB / ("index.html" if path == "/" else path.lstrip("/"))
-        if target.parent != WEB or target.name not in {"index.html", "app.js", "style.css"} or not target.is_file():
+        if path == "/vendor/supabase.js":
+            target = WEB / "vendor" / "supabase.js"
+        elif path in {"/", "/index.html", "/app.js", "/style.css"}:
+            target = WEB / ("index.html" if path == "/" else path.lstrip("/"))
+        else:
+            self.send_error(404)
+            return
+        if not target.is_file():
             self.send_error(404)
             return
         data = target.read_bytes()
@@ -400,28 +568,79 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         path = urlparse(self.path).path
+        if not path.startswith("/api/"):
+            return self._json(404, {"error": "Unknown route"})
+        try:
+            user = accounts.authenticate(self.headers.get("Authorization"))
+        except accounts.StorageError as exc:
+            return self._api_error(exc)
         try:
             length = int(self.headers.get("Content-Length", "0"))
-            if length <= 0 or length > 12_000_000:
-                raise ValueError("Request must be between 1 byte and 12 MB")
+            max_request = 250_000 if accounts.public_mode() else 12_000_000
+            if length <= 0 or length > max_request:
+                raise accounts.PayloadTooLarge("Request exceeds the public demo size limit" if accounts.public_mode() else "Request exceeds 12 MB")
             payload = json.loads(self.rfile.read(length))
+            if not isinstance(payload, dict):
+                raise ValueError("JSON object required")
+            if path == "/api/reviews":
+                if accounts.public_mode() and len(accounts.list_reviews(user["id"], DB)) >= MAX_PUBLIC_REVIEWS:
+                    return self._json(429, {"error": "You can keep up to 5 saved reviews on this free demo."})
+                review = accounts.create_review(user["id"], payload.get("title"), DB)
+                return self._json(201, {"review": review})
+            token = self._load_review(user, payload.get("review_id"))
+            claimed = False
+            active_review_id = REQUEST_REVIEW.get()["id"] if token is not None else None
+            try:
+                if accounts.public_mode() and path in EXPENSIVE_ACTIONS:
+                    denied = claim_public_action(user["id"], active_review_id)
+                    if denied:
+                        message = ("This review is already processing. Wait for it to finish." if denied == 409 else
+                                   "Too many imports or checks right now. Please try again in a few minutes.")
+                        return self._json(denied, {"error": message})
+                    claimed = True
+                return self._review_post(path, payload)
+            finally:
+                if claimed:
+                    release_public_action(user["id"], active_review_id)
+                if token is not None:
+                    REQUEST_REVIEW.reset(token)
+        except accounts.StorageError as exc:
+            self._api_error(exc)
+        except (ValueError, KeyError, TypeError, AttributeError, InvalidOperation, json.JSONDecodeError) as exc:
+            self._json(400, {"error": str(exc)})
+
+    def _review_post(self, path, payload):
+        try:
             state = read_state()
             if path == "/api/sample":
                 files = {name: (ROOT / "examples" / name).read_text(encoding="utf-8") for name in REQUIRED}
+                enforce_public_import_limits(files)
                 state = new_state(files, {"start": "2026-07-01", "end": "2026-07-31"}, "SYNTHETIC DEMO DATA")
+                if REQUEST_REVIEW.get() is not None:
+                    REQUEST_REVIEW.get()["meterless_data"] = None
                 ingest_meterless(state)
                 trace_import(state)
             elif path == "/api/import":
                 files = payload.get("files")
                 if not isinstance(files, dict):
                     raise ValueError("Five named CSV file contents are required")
+                enforce_public_import_limits(files)
                 state = new_state(files, payload.get("period"), "USER UPLOADED CSV DATA")
+                if REQUEST_REVIEW.get() is not None:
+                    REQUEST_REVIEW.get()["meterless_data"] = None
                 ingest_meterless(state)
                 trace_import(state)
             elif path == "/api/import-zetaris":
+                if accounts.public_mode() and REQUEST_REVIEW.get()["owner"] != os.environ.get("LENS_ZETARIS_DEMO_OWNER_ID"):
+                    return self._json(403, {"error": "Zetaris demo import is available to the demo owner only."})
                 client = ZetarisClient(ZetarisConfig.from_environment())
-                snapshot = read_lens_snapshot(client, LensTables.from_environment())
+                with public_service_slot(ZETARIS_GATE, "Zetaris"):
+                    snapshot = read_lens_snapshot(client, LensTables.from_environment())
+                if snapshot.get("status") == "ok":
+                    enforce_public_import_limits(snapshot["files"])
                 state = new_zetaris_state(snapshot, payload.get("period"))
+                if REQUEST_REVIEW.get() is not None:
+                    REQUEST_REVIEW.get()["meterless_data"] = None
                 ingest_meterless(state)
                 trace_import(state)
             elif path == "/api/check":
@@ -510,10 +729,22 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(404, {"error": "Unknown route"})
             save_state(state)
             self._json(200, state)
+        except accounts.StorageError as exc:
+            self._api_error(exc)
         except (ValueError, KeyError, TypeError, AttributeError, InvalidOperation, json.JSONDecodeError) as exc:
             self._json(400, {"error": str(exc)})
 
 
 if __name__ == "__main__":
-    print("Lens local workspace: http://127.0.0.1:8765")
-    ThreadingHTTPServer(("127.0.0.1", 8765), Handler).serve_forever()
+    host = os.environ.get("LENS_HOST", "127.0.0.1")
+    port = int(os.environ.get("PORT", "8765"))
+    public_requested = (host not in ("127.0.0.1", "localhost", "::1") or
+                        "PORT" in os.environ or
+                        os.environ.get("LENS_PUBLIC_MODE", "").lower() in ("1", "true", "yes") or
+                        any(os.environ.get(name) for name in ("SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY")))
+    if public_requested and not accounts.public_mode():
+        raise SystemExit("Public binding requires configured Supabase authentication")
+    if accounts.public_mode():
+        accounts.public_config()  # Fail startup on partial credentials.
+    print(f"Lens review server: http://{host}:{port}")
+    ThreadingHTTPServer((host, port), Handler).serve_forever()

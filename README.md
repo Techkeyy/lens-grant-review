@@ -37,7 +37,13 @@ python app.py
 
 Open `http://127.0.0.1:8765` and choose **Load sample case**. Then check both reports, open a finding, correct the duplicated time allocation, rerun, refresh, and reopen the saved review. To use your own supported CSVs, upload the five files shown in the form. The [sample CSVs](examples/) show the required columns. Loading a different case replaces the current local review, so export a review you want to retain first.
 
-Local records and review history are written under `data/`, which Git ignores. The app has no authentication or multi-user isolation. Do not put real charity or donor records into a publicly reachable instance.
+In local mode, records and review history are written under `data/`, which Git ignores. The legacy local review remains single-user and binds only to `127.0.0.1`. The backend also supports separate named reviews. A public bind requires configured Supabase authentication and per-account storage. Google sign-in and the saved-review interface are implemented locally; the deployed two-account journey still requires UAT. Do not put real charity or donor records into a publicly reachable instance until the public user flow and privacy controls pass UAT.
+
+## Public review backend (under development)
+
+The public backend verifies each bearer token with Supabase Auth, derives the owner ID from that response, and stores each named review in Supabase Postgres. Review JSON and Meterless event history are saved in the same row, so an ephemeral web host can restore both after sleep or redeploy. An `owner_id` filter is applied to every server read and update. Browser roles have no direct table privileges or Row Level Security policies, preventing them from replacing saved state outside the Lens API. Writes use a row version check so a stale tab receives a conflict instead of silently overwriting a newer review. The service-role key remains server-only.
+
+The database schema is [docs/lens_reviews.sql](docs/lens_reviews.sql). Set `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` in the private server environment. `GET /api/config` returns only the URL and browser-safe anon key; it never returns the service-role key. Public API calls require `Authorization: Bearer <Supabase access token>`. `GET /api/reviews` lists the authenticated account's reviews; `POST /api/reviews` with `{ "title": "..." }` creates one. `GET /api/state`, `/api/integrations`, and `/api/export` take `review_id` in the query string; existing POST actions take it in the JSON body. Other accounts' review IDs return 404. The public service caps each account at 5 saved reviews, five CSV files at 100 KB combined and 200 data rows per file, and each review with its Meterless history at 750 KB. Import/check actions are limited to 12 per account and 60 globally per five minutes in the one server process; a second import or check on the same review receives 409. Meterless and Zetaris calls each run one at a time to bound memory use. Rate and busy limits return 429; size limits return 413. These in-process limits are sized for one free Render instance, not a distributed deployment. The public Zetaris demo import is restricted to the account ID configured as `LENS_ZETARIS_DEMO_OWNER_ID` and uses only the owner's synthetic tables. See [the public deployment plan](docs/PUBLIC_DEPLOYMENT.md) and [UAT plan](docs/PUBLIC_UAT.md); neither document proves deployment has happened.
 
 ## Test and sponsor proof
 
@@ -53,7 +59,7 @@ From `meterless/`:
 ```powershell
 npm test
 npm run proof
-$env:WORLD_MODEL_IMPL='C:/Users/HomePC/Desktop/Lens/meterless/vendor/src/index.ts'
+$env:WORLD_MODEL_IMPL=(Resolve-Path .\meterless\vendor\src\index.ts).Path
 node --experimental-transform-types .\vendor\conformance\runner.ts
 ```
 

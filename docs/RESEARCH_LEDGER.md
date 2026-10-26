@@ -4,9 +4,9 @@ This ledger distinguishes the user's instructions, the event's published materia
 
 ## Inputs inspected
 
-- User conversation: the chosen product is named **Lens**, it should live at `C:\Users\HomePC\Desktop\Lens`, and its core is a pre-submission evidence check across multiple grants. The user wants the builder to use relevant Desktop skills and read host documents carefully.
-- User-provided event-page snapshots: `C:\Users\HomePC\.codex\attachments\31a44252-0d26-4c0e-980a-65985f1ac6df\Pasted text.txt` and `C:\Users\HomePC\.codex\attachments\500c1fc4-72b4-4741-be76-fb16e2448e2d\Pasted text.txt`. The latter includes all ten expanded official-rule sections. The official event page is https://hackathon.genai.works/event/open-agent-hackathon-2026.
-- Local `C:\Users\HomePC\Desktop\skill` inventory: `audit-skill`, `build-process`, `critical-bug`, `demo-video`, `design-skill`, `hackathon-onboarding`, `idea-research`, `perfect-readme`, `project-edge`, `project-understanding`, and `master director skill.txt` were present. The seven skills named by the user were read. Their applicability is phase-specific: onboarding and understanding now; build-process for feasibility and implementation; design after the user journey is fixed; audit, perfect-readme, and project-edge after there is a working product. The master director standard requires an end-to-end normal-user proof before calling the product finished.
+- User conversation: the chosen product is named **Lens**, and its core is a pre-submission evidence check across multiple grants. The user asked the builder to use relevant research, design, build, and audit skills and to read host documents carefully.
+- User-provided snapshots of the event page included all ten expanded official-rule sections. The official event page is https://hackathon.genai.works/event/open-agent-hackathon-2026. Private attachment paths are omitted from this public ledger.
+- The user's local skill collection included audit, build-process, design, hackathon-onboarding, idea-research, README, and project-understanding guidance. Skills were used by phase. The master director standard requires an end-to-end normal-user proof before calling the product finished.
 - Director's live official-page review: [Open Agent Hackathon 2026](https://hackathon.genai.works/event/open-agent-hackathon-2026) confirms the Track 02 brief, scoring, build window, and deadline cited below. The director could not open every rule accordion or authenticated HackOS lesson.
 - Official Zetaris [getting started guide](https://zetaris.github.io/getting-started/index.html) and [CSV/Parquet file onboarding guide](https://zetaris.github.io/getting-started/open_data/parquet_csv/HOWTO.html) were identified by the director for future hands-on checks. Their existence is not evidence that Lens is connected.
 
@@ -28,7 +28,7 @@ This ledger distinguishes the user's instructions, the event's published materia
 | GitHub repository | Required: all source code, README with setup/usage/dependencies; Colab links if applicable | Expanded Rule 6.3. Repository visibility is not specified in pasted text; confirm in HackOS. |
 | Submission explanation | Required: explain Zetaris, Meterless, Cursor development use, NVIDIA contribution, and distinctive sponsor use | Expanded Rule 6.4 |
 | Deployed-app requirement and HackOS form fields | Not established by expanded public rules | Inspect registered HackOS submission form before final submission. A working normal-user path is still the Lens product acceptance gate. |
-| Registration and access | Unknown for this user's account | Confirm actual registered status and sponsor credentials in the event workspace. |
+| Registration and access | The builder confirmed registration and sponsor-resource access during the build | Recheck the authenticated event workspace before submission. |
 
 ## Product assumptions and proof needed
 

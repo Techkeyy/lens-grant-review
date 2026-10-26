@@ -21,7 +21,7 @@ From this directory, with Node.js 24 (the installed runtime verified here):
 ```powershell
 npm test
 npm run proof
-$env:WORLD_MODEL_IMPL='C:/Users/HomePC/Desktop/Lens/meterless/vendor/src/index.ts'
+$env:WORLD_MODEL_IMPL=(Resolve-Path .\vendor\src\index.ts).Path
 node --experimental-transform-types .\vendor\conformance\runner.ts
 ```
 
