@@ -1,0 +1,81 @@
+{
+  "recorded_at": "2026-10-27T05:33:53.5497374Z",
+  "data_label": "ZETARIS QUERY SNAPSHOT",
+  "source_rows": 13,
+  "report_claims": 8,
+  "tables": [
+    {
+      "file": "timesheets.csv",
+      "table": "LENS_DEMO_FILES.timesheets",
+      "rows": 4,
+      "sha256": "c7bbb8008e553f3469cde143e3031f4f7d6eda5f958af14675c412d57ec6e0c7"
+    },
+    {
+      "file": "receipts.csv",
+      "table": "LENS_DEMO_FILES.receipts",
+      "rows": 1,
+      "sha256": "aae4c832507320c61a694a0b4e48d94b705400982f8aaa047f1285ddad57af92"
+    },
+    {
+      "file": "activity_log.csv",
+      "table": "LENS_DEMO_FILES.acivity_log",
+      "rows": 8,
+      "sha256": "77ec2411272c8aab77e6fea7a7d0a88bb15b2d33622cf24835577462986fffd5"
+    },
+    {
+      "file": "reading_futures_draft.csv",
+      "table": "LENS_DEMO_FILES.reading_future_drafts",
+      "rows": 4,
+      "sha256": "4ffb001fc61b7d599bfda6a37d2ac15d5f5ef9e94fe13b4bbce7c47cfc18ba08"
+    },
+    {
+      "file": "community_learning_draft.csv",
+      "table": "LENS_DEMO_FILES.community_learning_drafts",
+      "rows": 4,
+      "sha256": "3a680f8f4ea19604e230b64398f98b40a6482950b64e98af2d9dc36e4dd291cc"
+    }
+  ],
+  "checks": [
+    {
+      "at": "2026-10-27T06:33:13.697945+01:00",
+      "revision": 1,
+      "counts": {
+        "needs_correction": 1,
+        "needs_evidence": 1,
+        "needs_review": 1,
+        "clear": 2
+      }
+    },
+    {
+      "at": "2026-10-27T06:33:29.937964+01:00",
+      "revision": 2,
+      "counts": {
+        "needs_correction": 0,
+        "needs_evidence": 1,
+        "needs_review": 1,
+        "clear": 3
+      }
+    }
+  ],
+  "current_probe": {
+    "code": "ACTIVITY_SUPPORT_GAP",
+    "status": "confirmed_against_snapshot",
+    "tables": [
+      "LENS_DEMO_FILES.acivity_log"
+    ],
+    "request_ids": [
+      "add1e2f0-bdbe-4213-9022-40f4b47e4d9f"
+    ]
+  },
+  "meterless_events": 59,
+  "restart_check": {
+    "phase": "checked",
+    "revision": 2,
+    "findings": 5,
+    "probe": "ACTIVITY_SUPPORT_GAP",
+    "meterless_status": "live",
+    "meterless_events": 59
+  },
+  "nightshift_status": "not_configured",
+  "caveat": "Synthetic demonstration data; local owner-controlled Zetaris cluster. Nightshift was not configured in this run."
+}

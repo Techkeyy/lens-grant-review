@@ -23,6 +23,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 import accounts
+from nightshift import choose_followup
 
 from lens_core import analyze_case
 from lens_investigator import investigate
@@ -33,8 +34,9 @@ from zetaris.raw_evidence import read_lens_snapshot
 
 ROOT = Path(__file__).resolve().parent
 WEB = ROOT / "web"
-DB = ROOT / "data" / "lens.sqlite3"
-METERLESS_STORE = ROOT / "data" / "meterless"
+DATA_ROOT = Path(os.environ.get("LENS_DATA_DIR", str(ROOT / "data"))).resolve()
+DB = DATA_ROOT / "lens.sqlite3"
+METERLESS_STORE = DATA_ROOT / "meterless"
 REQUEST_REVIEW = ContextVar("request_review", default=None)
 PUBLIC_ACTION_LOCK = threading.Lock()
 PUBLIC_ACTIVE_REVIEWS = set()
@@ -403,6 +405,15 @@ def trace_check_outcome(state):
 
 def run_investigation(state):
     """Choose one follow-up from current findings; keep failures non-authoritative."""
+    routing = choose_followup(state["result"]["findings"])
+    state["nightshift"] = routing
+    if routing["status"] == "used":
+        trace_step(state, "nightshift_route", "Nightshift prioritized an existing evidence question.",
+                   selected_code=routing["selected_code"], model=routing["model"],
+                   request_id=routing.get("request_id"))
+    elif routing["status"] != "no_candidate":
+        trace_step(state, "nightshift_route", "Nightshift did not return a usable model decision; the fixed follow-up order was used.",
+                   status=routing["status"])
     client = tables = None
     if "zetaris" in state:
         try:
@@ -412,7 +423,8 @@ def run_investigation(state):
         except ValueError:
             pass  # Persist an unavailable probe without exposing connection details.
     with public_service_slot(ZETARIS_GATE, "Zetaris"):
-        probe = investigate(state["result"]["findings"], state.get("zetaris"), client, tables)
+        probe = investigate(state["result"]["findings"], state.get("zetaris"), client, tables,
+                            preferred_code=routing["selected_code"])
     state["investigation"] = probe
     if probe:
         summary = ("Completed one bounded Zetaris follow-up."

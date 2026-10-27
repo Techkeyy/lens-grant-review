@@ -28,9 +28,10 @@ PROBES = {
 }
 
 
-def choose_probe(findings: list[dict]) -> tuple[dict, dict] | None:
+def choose_probe(findings: list[dict], preferred_code: str | None = None) -> tuple[dict, dict] | None:
     """Choose at most one open finding; branch priority is stable on reruns."""
-    for code in PROBES:
+    order = ([preferred_code] if preferred_code in PROBES else []) + [code for code in PROBES if code != preferred_code]
+    for code in order:
         for finding in findings:
             if finding["code"] == code and finding["status"] != "clear":
                 return finding, PROBES[code]
@@ -45,14 +46,15 @@ def _captured_sha(rows: list[dict], columns: tuple[str, ...]) -> str:
     return sha256(output.getvalue().encode("utf-8")).hexdigest()
 
 
-def investigate(findings: list[dict], zetaris: dict | None, client=None, tables=None) -> dict | None:
+def investigate(findings: list[dict], zetaris: dict | None, client=None, tables=None,
+                preferred_code: str | None = None) -> dict | None:
     """Reread only selected tables and compare them with the *imported* snapshot.
 
     The imported hashes are independent of subsequent local reviewer edits.
     Each reread is bounded by the configured query limit. The result remains
     advisory; the original deterministic findings are never rewritten.
     """
-    selection = choose_probe(findings)
+    selection = choose_probe(findings, preferred_code)
     if selection is None:
         return None
     finding, plan = selection

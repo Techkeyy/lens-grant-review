@@ -1,0 +1,1035 @@
+[
+  {
+    "scenario": "original",
+    "description": "Two reports each claim all four hours; ten sessions are reported with eight records.",
+    "input": {
+      "label": "SYNTHETIC DEMO DATA - no real charity or person",
+      "reporting_period": {
+        "start": "2026-07-01",
+        "end": "2026-07-31"
+      },
+      "sources": [
+        {
+          "id": "TS-101",
+          "kind": "staff_time",
+          "person": "Samira Okafor",
+          "date": "2026-07-14",
+          "quantity": "4",
+          "unit": "hours",
+          "ref": {
+            "file": "timesheets.csv",
+            "row": 2
+          }
+        },
+        {
+          "id": "TS-102",
+          "kind": "staff_time",
+          "person": "Samira Okafor",
+          "date": "2026-07-15",
+          "quantity": "4",
+          "unit": "hours",
+          "ref": {
+            "file": "timesheets.csv",
+            "row": 3
+          }
+        },
+        {
+          "id": "RC-201",
+          "kind": "expense",
+          "vendor": "Reading Supply Co",
+          "date": "2026-07-16",
+          "quantity": "120.00",
+          "unit": "USD",
+          "ref": {
+            "file": "receipts.csv",
+            "row": 2
+          }
+        },
+        {
+          "id": "AC-301",
+          "kind": "activity",
+          "date": "2026-07-02",
+          "ref": {
+            "file": "activity_log.csv",
+            "row": 2
+          }
+        },
+        {
+          "id": "AC-302",
+          "kind": "activity",
+          "date": "2026-07-05",
+          "ref": {
+            "file": "activity_log.csv",
+            "row": 3
+          }
+        },
+        {
+          "id": "AC-303",
+          "kind": "activity",
+          "date": "2026-07-09",
+          "ref": {
+            "file": "activity_log.csv",
+            "row": 4
+          }
+        },
+        {
+          "id": "AC-304",
+          "kind": "activity",
+          "date": "2026-07-12",
+          "ref": {
+            "file": "activity_log.csv",
+            "row": 5
+          }
+        },
+        {
+          "id": "AC-305",
+          "kind": "activity",
+          "date": "2026-07-16",
+          "ref": {
+            "file": "activity_log.csv",
+            "row": 6
+          }
+        },
+        {
+          "id": "AC-306",
+          "kind": "activity",
+          "date": "2026-07-19",
+          "ref": {
+            "file": "activity_log.csv",
+            "row": 7
+          }
+        },
+        {
+          "id": "AC-307",
+          "kind": "activity",
+          "date": "2026-07-23",
+          "ref": {
+            "file": "activity_log.csv",
+            "row": 8
+          }
+        },
+        {
+          "id": "AC-308",
+          "kind": "activity",
+          "date": "2026-07-26",
+          "ref": {
+            "file": "activity_log.csv",
+            "row": 9
+          }
+        },
+        {
+          "id": "TS-103",
+          "kind": "staff_time",
+          "person": "Tari Adebayo",
+          "date": "2026-07-17",
+          "quantity": "3",
+          "unit": "hours",
+          "ref": {
+            "file": "timesheets.csv",
+            "row": 4
+          }
+        },
+        {
+          "id": "TS-104",
+          "kind": "staff_time",
+          "person": "Tari Adeboyo",
+          "date": "2026-07-17",
+          "quantity": "3",
+          "unit": "hours",
+          "ref": {
+            "file": "timesheets.csv",
+            "row": 5
+          }
+        }
+      ],
+      "claims": [
+        {
+          "id": "A-TIME-1",
+          "grant": "Reading Futures",
+          "kind": "allocation",
+          "source_id": "TS-101",
+          "person": "Samira Okafor",
+          "quantity": "4",
+          "unit": "hours",
+          "ref": {
+            "file": "reading_futures_draft.csv",
+            "row": 2
+          }
+        },
+        {
+          "id": "B-TIME-1",
+          "grant": "Community Learning",
+          "kind": "allocation",
+          "source_id": "TS-101",
+          "person": "Samira Okafor",
+          "quantity": "4",
+          "unit": "hours",
+          "ref": {
+            "file": "community_learning_draft.csv",
+            "row": 2
+          }
+        },
+        {
+          "id": "A-TIME-2",
+          "grant": "Reading Futures",
+          "kind": "allocation",
+          "source_id": "TS-102",
+          "person": "Samira Okafor",
+          "quantity": "2",
+          "unit": "hours",
+          "allocation_basis": "half of recorded tutoring hours",
+          "ref": {
+            "file": "reading_futures_draft.csv",
+            "row": 3
+          }
+        },
+        {
+          "id": "B-TIME-2",
+          "grant": "Community Learning",
+          "kind": "allocation",
+          "source_id": "TS-102",
+          "person": "Samira Okafor",
+          "quantity": "2",
+          "unit": "hours",
+          "allocation_basis": "half of recorded tutoring hours",
+          "ref": {
+            "file": "community_learning_draft.csv",
+            "row": 3
+          }
+        },
+        {
+          "id": "A-EXP-1",
+          "grant": "Reading Futures",
+          "kind": "allocation",
+          "source_id": "RC-201",
+          "vendor": "Reading Supply Co",
+          "quantity": "70.00",
+          "unit": "USD",
+          "allocation_basis": "70 of 120 books for this grant",
+          "ref": {
+            "file": "reading_futures_draft.csv",
+            "row": 4
+          }
+        },
+        {
+          "id": "B-EXP-1",
+          "grant": "Community Learning",
+          "kind": "allocation",
+          "source_id": "RC-201",
+          "vendor": "Reading Supply Co",
+          "quantity": "50.00",
+          "unit": "USD",
+          "allocation_basis": "50 of 120 books for this grant",
+          "ref": {
+            "file": "community_learning_draft.csv",
+            "row": 4
+          }
+        },
+        {
+          "id": "A-ACT-1",
+          "grant": "Reading Futures",
+          "kind": "activity_count",
+          "quantity": "10",
+          "unit": "sessions",
+          "evidence_ids": [
+            "AC-301",
+            "AC-302",
+            "AC-303",
+            "AC-304",
+            "AC-305",
+            "AC-306",
+            "AC-307",
+            "AC-308"
+          ],
+          "ref": {
+            "file": "reading_futures_draft.csv",
+            "row": 5
+          }
+        },
+        {
+          "id": "B-TIME-UNCERTAIN",
+          "grant": "Community Learning",
+          "kind": "allocation",
+          "source_id": null,
+          "candidate_source_ids": [
+            "TS-103",
+            "TS-104"
+          ],
+          "person": "Tari Adebayo",
+          "quantity": "3",
+          "unit": "hours",
+          "ref": {
+            "file": "community_learning_draft.csv",
+            "row": 5
+          }
+        }
+      ]
+    },
+    "output": [
+      {
+        "code": "OVERALLOCATED_SOURCE",
+        "status": "needs_correction",
+        "arithmetic": {
+          "allocated_total": "8",
+          "source_total": "4",
+          "unit": "hours"
+        },
+        "claim_ids": [
+          "A-TIME-1",
+          "B-TIME-1"
+        ],
+        "source_ids": [
+          "TS-101"
+        ]
+      },
+      {
+        "code": "ACTIVITY_SUPPORT_GAP",
+        "status": "needs_evidence",
+        "arithmetic": {
+          "reported": "10",
+          "linked_distinct_records": 8,
+          "gap": "2",
+          "unit": "sessions"
+        },
+        "claim_ids": [
+          "A-ACT-1"
+        ],
+        "source_ids": [
+          "AC-301",
+          "AC-302",
+          "AC-303",
+          "AC-304",
+          "AC-305",
+          "AC-306",
+          "AC-307",
+          "AC-308"
+        ]
+      },
+      {
+        "code": "SOURCE_IDENTITY_UNCERTAIN",
+        "status": "needs_review",
+        "arithmetic": null,
+        "claim_ids": [
+          "B-TIME-UNCERTAIN"
+        ],
+        "source_ids": [
+          "TS-103",
+          "TS-104"
+        ]
+      },
+      {
+        "code": "ALLOCATION_WITHIN_SOURCE",
+        "status": "clear",
+        "arithmetic": {
+          "allocated_total": "120.00",
+          "source_total": "120.00",
+          "unit": "USD"
+        },
+        "claim_ids": [
+          "A-EXP-1",
+          "B-EXP-1"
+        ],
+        "source_ids": [
+          "RC-201"
+        ]
+      },
+      {
+        "code": "ALLOCATION_WITHIN_SOURCE",
+        "status": "clear",
+        "arithmetic": {
+          "allocated_total": "4",
+          "source_total": "4",
+          "unit": "hours"
+        },
+        "claim_ids": [
+          "A-TIME-2",
+          "B-TIME-2"
+        ],
+        "source_ids": [
+          "TS-102"
+        ]
+      }
+    ]
+  },
+  {
+    "scenario": "corrected_split",
+    "description": "The two reports each claim two of the four recorded hours.",
+    "input": {
+      "label": "SYNTHETIC DEMO DATA - no real charity or person",
+      "reporting_period": {
+        "start": "2026-07-01",
+        "end": "2026-07-31"
+      },
+      "sources": [
+        {
+          "id": "TS-101",
+          "kind": "staff_time",
+          "person": "Samira Okafor",
+          "date": "2026-07-14",
+          "quantity": "4",
+          "unit": "hours",
+          "ref": {
+            "file": "timesheets.csv",
+            "row": 2
+          }
+        },
+        {
+          "id": "TS-102",
+          "kind": "staff_time",
+          "person": "Samira Okafor",
+          "date": "2026-07-15",
+          "quantity": "4",
+          "unit": "hours",
+          "ref": {
+            "file": "timesheets.csv",
+            "row": 3
+          }
+        },
+        {
+          "id": "RC-201",
+          "kind": "expense",
+          "vendor": "Reading Supply Co",
+          "date": "2026-07-16",
+          "quantity": "120.00",
+          "unit": "USD",
+          "ref": {
+            "file": "receipts.csv",
+            "row": 2
+          }
+        },
+        {
+          "id": "AC-301",
+          "kind": "activity",
+          "date": "2026-07-02",
+          "ref": {
+            "file": "activity_log.csv",
+            "row": 2
+          }
+        },
+        {
+          "id": "AC-302",
+          "kind": "activity",
+          "date": "2026-07-05",
+          "ref": {
+            "file": "activity_log.csv",
+            "row": 3
+          }
+        },
+        {
+          "id": "AC-303",
+          "kind": "activity",
+          "date": "2026-07-09",
+          "ref": {
+            "file": "activity_log.csv",
+            "row": 4
+          }
+        },
+        {
+          "id": "AC-304",
+          "kind": "activity",
+          "date": "2026-07-12",
+          "ref": {
+            "file": "activity_log.csv",
+            "row": 5
+          }
+        },
+        {
+          "id": "AC-305",
+          "kind": "activity",
+          "date": "2026-07-16",
+          "ref": {
+            "file": "activity_log.csv",
+            "row": 6
+          }
+        },
+        {
+          "id": "AC-306",
+          "kind": "activity",
+          "date": "2026-07-19",
+          "ref": {
+            "file": "activity_log.csv",
+            "row": 7
+          }
+        },
+        {
+          "id": "AC-307",
+          "kind": "activity",
+          "date": "2026-07-23",
+          "ref": {
+            "file": "activity_log.csv",
+            "row": 8
+          }
+        },
+        {
+          "id": "AC-308",
+          "kind": "activity",
+          "date": "2026-07-26",
+          "ref": {
+            "file": "activity_log.csv",
+            "row": 9
+          }
+        },
+        {
+          "id": "TS-103",
+          "kind": "staff_time",
+          "person": "Tari Adebayo",
+          "date": "2026-07-17",
+          "quantity": "3",
+          "unit": "hours",
+          "ref": {
+            "file": "timesheets.csv",
+            "row": 4
+          }
+        },
+        {
+          "id": "TS-104",
+          "kind": "staff_time",
+          "person": "Tari Adeboyo",
+          "date": "2026-07-17",
+          "quantity": "3",
+          "unit": "hours",
+          "ref": {
+            "file": "timesheets.csv",
+            "row": 5
+          }
+        }
+      ],
+      "claims": [
+        {
+          "id": "A-TIME-1",
+          "grant": "Reading Futures",
+          "kind": "allocation",
+          "source_id": "TS-101",
+          "person": "Samira Okafor",
+          "quantity": "2",
+          "unit": "hours",
+          "ref": {
+            "file": "reading_futures_draft.csv",
+            "row": 2
+          }
+        },
+        {
+          "id": "B-TIME-1",
+          "grant": "Community Learning",
+          "kind": "allocation",
+          "source_id": "TS-101",
+          "person": "Samira Okafor",
+          "quantity": "2",
+          "unit": "hours",
+          "ref": {
+            "file": "community_learning_draft.csv",
+            "row": 2
+          }
+        },
+        {
+          "id": "A-TIME-2",
+          "grant": "Reading Futures",
+          "kind": "allocation",
+          "source_id": "TS-102",
+          "person": "Samira Okafor",
+          "quantity": "2",
+          "unit": "hours",
+          "allocation_basis": "half of recorded tutoring hours",
+          "ref": {
+            "file": "reading_futures_draft.csv",
+            "row": 3
+          }
+        },
+        {
+          "id": "B-TIME-2",
+          "grant": "Community Learning",
+          "kind": "allocation",
+          "source_id": "TS-102",
+          "person": "Samira Okafor",
+          "quantity": "2",
+          "unit": "hours",
+          "allocation_basis": "half of recorded tutoring hours",
+          "ref": {
+            "file": "community_learning_draft.csv",
+            "row": 3
+          }
+        },
+        {
+          "id": "A-EXP-1",
+          "grant": "Reading Futures",
+          "kind": "allocation",
+          "source_id": "RC-201",
+          "vendor": "Reading Supply Co",
+          "quantity": "70.00",
+          "unit": "USD",
+          "allocation_basis": "70 of 120 books for this grant",
+          "ref": {
+            "file": "reading_futures_draft.csv",
+            "row": 4
+          }
+        },
+        {
+          "id": "B-EXP-1",
+          "grant": "Community Learning",
+          "kind": "allocation",
+          "source_id": "RC-201",
+          "vendor": "Reading Supply Co",
+          "quantity": "50.00",
+          "unit": "USD",
+          "allocation_basis": "50 of 120 books for this grant",
+          "ref": {
+            "file": "community_learning_draft.csv",
+            "row": 4
+          }
+        },
+        {
+          "id": "A-ACT-1",
+          "grant": "Reading Futures",
+          "kind": "activity_count",
+          "quantity": "10",
+          "unit": "sessions",
+          "evidence_ids": [
+            "AC-301",
+            "AC-302",
+            "AC-303",
+            "AC-304",
+            "AC-305",
+            "AC-306",
+            "AC-307",
+            "AC-308"
+          ],
+          "ref": {
+            "file": "reading_futures_draft.csv",
+            "row": 5
+          }
+        },
+        {
+          "id": "B-TIME-UNCERTAIN",
+          "grant": "Community Learning",
+          "kind": "allocation",
+          "source_id": null,
+          "candidate_source_ids": [
+            "TS-103",
+            "TS-104"
+          ],
+          "person": "Tari Adebayo",
+          "quantity": "3",
+          "unit": "hours",
+          "ref": {
+            "file": "community_learning_draft.csv",
+            "row": 5
+          }
+        }
+      ]
+    },
+    "output": [
+      {
+        "code": "ACTIVITY_SUPPORT_GAP",
+        "status": "needs_evidence",
+        "arithmetic": {
+          "reported": "10",
+          "linked_distinct_records": 8,
+          "gap": "2",
+          "unit": "sessions"
+        },
+        "claim_ids": [
+          "A-ACT-1"
+        ],
+        "source_ids": [
+          "AC-301",
+          "AC-302",
+          "AC-303",
+          "AC-304",
+          "AC-305",
+          "AC-306",
+          "AC-307",
+          "AC-308"
+        ]
+      },
+      {
+        "code": "SOURCE_IDENTITY_UNCERTAIN",
+        "status": "needs_review",
+        "arithmetic": null,
+        "claim_ids": [
+          "B-TIME-UNCERTAIN"
+        ],
+        "source_ids": [
+          "TS-103",
+          "TS-104"
+        ]
+      },
+      {
+        "code": "ALLOCATION_WITHIN_SOURCE",
+        "status": "clear",
+        "arithmetic": {
+          "allocated_total": "120.00",
+          "source_total": "120.00",
+          "unit": "USD"
+        },
+        "claim_ids": [
+          "A-EXP-1",
+          "B-EXP-1"
+        ],
+        "source_ids": [
+          "RC-201"
+        ]
+      },
+      {
+        "code": "ALLOCATION_WITHIN_SOURCE",
+        "status": "clear",
+        "arithmetic": {
+          "allocated_total": "4",
+          "source_total": "4",
+          "unit": "hours"
+        },
+        "claim_ids": [
+          "A-TIME-1",
+          "B-TIME-1"
+        ],
+        "source_ids": [
+          "TS-101"
+        ]
+      },
+      {
+        "code": "ALLOCATION_WITHIN_SOURCE",
+        "status": "clear",
+        "arithmetic": {
+          "allocated_total": "4",
+          "source_total": "4",
+          "unit": "hours"
+        },
+        "claim_ids": [
+          "A-TIME-2",
+          "B-TIME-2"
+        ],
+        "source_ids": [
+          "TS-102"
+        ]
+      }
+    ]
+  },
+  {
+    "scenario": "revised_activity_claim",
+    "description": "The draft now reports eight sessions against eight linked activity records.",
+    "input": {
+      "label": "SYNTHETIC DEMO DATA - no real charity or person",
+      "reporting_period": {
+        "start": "2026-07-01",
+        "end": "2026-07-31"
+      },
+      "sources": [
+        {
+          "id": "TS-101",
+          "kind": "staff_time",
+          "person": "Samira Okafor",
+          "date": "2026-07-14",
+          "quantity": "4",
+          "unit": "hours",
+          "ref": {
+            "file": "timesheets.csv",
+            "row": 2
+          }
+        },
+        {
+          "id": "TS-102",
+          "kind": "staff_time",
+          "person": "Samira Okafor",
+          "date": "2026-07-15",
+          "quantity": "4",
+          "unit": "hours",
+          "ref": {
+            "file": "timesheets.csv",
+            "row": 3
+          }
+        },
+        {
+          "id": "RC-201",
+          "kind": "expense",
+          "vendor": "Reading Supply Co",
+          "date": "2026-07-16",
+          "quantity": "120.00",
+          "unit": "USD",
+          "ref": {
+            "file": "receipts.csv",
+            "row": 2
+          }
+        },
+        {
+          "id": "AC-301",
+          "kind": "activity",
+          "date": "2026-07-02",
+          "ref": {
+            "file": "activity_log.csv",
+            "row": 2
+          }
+        },
+        {
+          "id": "AC-302",
+          "kind": "activity",
+          "date": "2026-07-05",
+          "ref": {
+            "file": "activity_log.csv",
+            "row": 3
+          }
+        },
+        {
+          "id": "AC-303",
+          "kind": "activity",
+          "date": "2026-07-09",
+          "ref": {
+            "file": "activity_log.csv",
+            "row": 4
+          }
+        },
+        {
+          "id": "AC-304",
+          "kind": "activity",
+          "date": "2026-07-12",
+          "ref": {
+            "file": "activity_log.csv",
+            "row": 5
+          }
+        },
+        {
+          "id": "AC-305",
+          "kind": "activity",
+          "date": "2026-07-16",
+          "ref": {
+            "file": "activity_log.csv",
+            "row": 6
+          }
+        },
+        {
+          "id": "AC-306",
+          "kind": "activity",
+          "date": "2026-07-19",
+          "ref": {
+            "file": "activity_log.csv",
+            "row": 7
+          }
+        },
+        {
+          "id": "AC-307",
+          "kind": "activity",
+          "date": "2026-07-23",
+          "ref": {
+            "file": "activity_log.csv",
+            "row": 8
+          }
+        },
+        {
+          "id": "AC-308",
+          "kind": "activity",
+          "date": "2026-07-26",
+          "ref": {
+            "file": "activity_log.csv",
+            "row": 9
+          }
+        },
+        {
+          "id": "TS-103",
+          "kind": "staff_time",
+          "person": "Tari Adebayo",
+          "date": "2026-07-17",
+          "quantity": "3",
+          "unit": "hours",
+          "ref": {
+            "file": "timesheets.csv",
+            "row": 4
+          }
+        },
+        {
+          "id": "TS-104",
+          "kind": "staff_time",
+          "person": "Tari Adeboyo",
+          "date": "2026-07-17",
+          "quantity": "3",
+          "unit": "hours",
+          "ref": {
+            "file": "timesheets.csv",
+            "row": 5
+          }
+        }
+      ],
+      "claims": [
+        {
+          "id": "A-TIME-1",
+          "grant": "Reading Futures",
+          "kind": "allocation",
+          "source_id": "TS-101",
+          "person": "Samira Okafor",
+          "quantity": "4",
+          "unit": "hours",
+          "ref": {
+            "file": "reading_futures_draft.csv",
+            "row": 2
+          }
+        },
+        {
+          "id": "B-TIME-1",
+          "grant": "Community Learning",
+          "kind": "allocation",
+          "source_id": "TS-101",
+          "person": "Samira Okafor",
+          "quantity": "4",
+          "unit": "hours",
+          "ref": {
+            "file": "community_learning_draft.csv",
+            "row": 2
+          }
+        },
+        {
+          "id": "A-TIME-2",
+          "grant": "Reading Futures",
+          "kind": "allocation",
+          "source_id": "TS-102",
+          "person": "Samira Okafor",
+          "quantity": "2",
+          "unit": "hours",
+          "allocation_basis": "half of recorded tutoring hours",
+          "ref": {
+            "file": "reading_futures_draft.csv",
+            "row": 3
+          }
+        },
+        {
+          "id": "B-TIME-2",
+          "grant": "Community Learning",
+          "kind": "allocation",
+          "source_id": "TS-102",
+          "person": "Samira Okafor",
+          "quantity": "2",
+          "unit": "hours",
+          "allocation_basis": "half of recorded tutoring hours",
+          "ref": {
+            "file": "community_learning_draft.csv",
+            "row": 3
+          }
+        },
+        {
+          "id": "A-EXP-1",
+          "grant": "Reading Futures",
+          "kind": "allocation",
+          "source_id": "RC-201",
+          "vendor": "Reading Supply Co",
+          "quantity": "70.00",
+          "unit": "USD",
+          "allocation_basis": "70 of 120 books for this grant",
+          "ref": {
+            "file": "reading_futures_draft.csv",
+            "row": 4
+          }
+        },
+        {
+          "id": "B-EXP-1",
+          "grant": "Community Learning",
+          "kind": "allocation",
+          "source_id": "RC-201",
+          "vendor": "Reading Supply Co",
+          "quantity": "50.00",
+          "unit": "USD",
+          "allocation_basis": "50 of 120 books for this grant",
+          "ref": {
+            "file": "community_learning_draft.csv",
+            "row": 4
+          }
+        },
+        {
+          "id": "A-ACT-1",
+          "grant": "Reading Futures",
+          "kind": "activity_count",
+          "quantity": "8",
+          "unit": "sessions",
+          "evidence_ids": [
+            "AC-301",
+            "AC-302",
+            "AC-303",
+            "AC-304",
+            "AC-305",
+            "AC-306",
+            "AC-307",
+            "AC-308"
+          ],
+          "ref": {
+            "file": "reading_futures_draft.csv",
+            "row": 5
+          }
+        },
+        {
+          "id": "B-TIME-UNCERTAIN",
+          "grant": "Community Learning",
+          "kind": "allocation",
+          "source_id": null,
+          "candidate_source_ids": [
+            "TS-103",
+            "TS-104"
+          ],
+          "person": "Tari Adebayo",
+          "quantity": "3",
+          "unit": "hours",
+          "ref": {
+            "file": "community_learning_draft.csv",
+            "row": 5
+          }
+        }
+      ]
+    },
+    "output": [
+      {
+        "code": "OVERALLOCATED_SOURCE",
+        "status": "needs_correction",
+        "arithmetic": {
+          "allocated_total": "8",
+          "source_total": "4",
+          "unit": "hours"
+        },
+        "claim_ids": [
+          "A-TIME-1",
+          "B-TIME-1"
+        ],
+        "source_ids": [
+          "TS-101"
+        ]
+      },
+      {
+        "code": "SOURCE_IDENTITY_UNCERTAIN",
+        "status": "needs_review",
+        "arithmetic": null,
+        "claim_ids": [
+          "B-TIME-UNCERTAIN"
+        ],
+        "source_ids": [
+          "TS-103",
+          "TS-104"
+        ]
+      },
+      {
+        "code": "ALLOCATION_WITHIN_SOURCE",
+        "status": "clear",
+        "arithmetic": {
+          "allocated_total": "120.00",
+          "source_total": "120.00",
+          "unit": "USD"
+        },
+        "claim_ids": [
+          "A-EXP-1",
+          "B-EXP-1"
+        ],
+        "source_ids": [
+          "RC-201"
+        ]
+      },
+      {
+        "code": "ALLOCATION_WITHIN_SOURCE",
+        "status": "clear",
+        "arithmetic": {
+          "allocated_total": "4",
+          "source_total": "4",
+          "unit": "hours"
+        },
+        "claim_ids": [
+          "A-TIME-2",
+          "B-TIME-2"
+        ],
+        "source_ids": [
+          "TS-102"
+        ]
+      }
+    ]
+  }
+]

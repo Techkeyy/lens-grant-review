@@ -2,7 +2,7 @@
 
 **Check two draft grant reports against the records behind them before they go to funders.**
 
-**[Live app](https://lens-grant-review.onrender.com)** · **[Synthetic sample files](examples/)** · **[Public UAT record](docs/PUBLIC_UAT_2026-10-26.md)**
+**[Live app](https://lens-grant-review.onrender.com)** · **[Three reproducible sample runs](examples/sample_runs.json)** · **[Public UAT record](docs/PUBLIC_UAT_2026-10-26.md)**
 
 Lens is for the person at a small charity who prepares or reviews funder reports. Receipts, timesheets, activity notes, and draft claims can look reasonable separately. Lens brings linked records together, shows where the evidence fits or falls short, and leaves the decision with that person.
 
@@ -67,9 +67,11 @@ For the public service, the server requires Supabase configuration and Google si
 
 Lens reconciles deterministically. It sums claims linked to the same source, checks units and reporting periods, counts distinct linked activity rows, and leaves missing or ambiguous evidence open. A bounded investigator can choose one allowlisted, read-only follow-up. It does not author arbitrary SQL or choose a person from a similar name.
 
-The public sample and ordinary CSV uploads are checked from their imported snapshot. The review labels this path as having **no live Zetaris grant-data query for that review**. An owner-controlled Zetaris path can read five registered synthetic grant tables into a captured snapshot and requery selected sources; it was exercised locally with a live cluster. Public Zetaris import is restricted to the configured demo owner. [Zetaris setup and proof](zetaris/README.md) documents its tables, settings, and read-only checks.
+The public sample and ordinary CSV uploads are checked from their imported snapshot. The review labels this path as having **no live Zetaris grant-data query for that review**. An owner-controlled Zetaris path reads five registered synthetic grant tables into a captured snapshot and requeries selected sources; it passed a fresh local HTTP import, check, correction, rerun and process-restart check on 27 October. Public Zetaris import is restricted to the configured demo owner. [Zetaris setup](zetaris/README.md) and the [sanitized live proof](docs/zetaris_live_http_proof_2026-10-27.json) document table counts, snapshot hashes, follow-up request IDs and results.
 
 Lens records source, finding, and human-decision events using the included Meterless World Model reference runtime. In the public service, that history is saved with the account’s review. [Meterless implementation and proof](meterless/README.md) explains the reference integration and its limits.
+
+Lens also has a bounded [Meterless Nightshift provider adapter](nightshift.py). When a runtime URL and real token are configured, it sends the codes and arithmetic of open findings to `meterless/auto` and accepts only a supported finding code as the next question to investigate. It records the returned model and request ID. Nightshift cannot change a source link, calculation, or finding status; if the runtime is absent or its response is invalid, Lens labels the model decision unavailable and uses a fixed follow-up order. [Nightshift setup and smoke test](docs/NIGHTSHIFT_SETUP.md) gives the remaining steps. **No live Nightshift request has been verified for this release, and the public Render service is not configured to reach a Nightshift hotspot.** This is an outstanding hackathon integration gate, not proof of sponsor compliance.
 
 | Module | Job |
 | --- | --- |
@@ -80,6 +82,7 @@ Lens records source, finding, and human-decision events using the included Meter
 | `lens_investigator.py` | Select one bounded follow-up or abstain. |
 | `zetaris/` | Read configured grant tables and preserve query receipts. |
 | `meterless/` | Store linked source, finding, and human-decision events. |
+| `nightshift.py` | Ask a configured Nightshift hotspot to prioritize an already-supported follow-up. |
 | `examples/` | Show the supported CSV shape with invented records. |
 
 ## Checks and boundaries
@@ -96,7 +99,7 @@ npm run proof
 
 The tests exercise over-allocation, valid proportional splits, missing activity support, ambiguous identity, changed-source abstention, invalid import recovery, account ownership checks, and a saved correction followed by rerun. The Meterless proof runs against its included reference runtime; it is not a hosted production service. See [`tests/`](tests/) and [`zetaris/`](zetaris/).
 
-On 26 October 2026, these commands passed **31 application tests, 13 Zetaris tests, and 4 Meterless tests**; the Meterless proof also completed. The counts describe these commands, not a claim that every public user path has been tested.
+On 27 October 2026, these commands passed **35 application tests, 13 Zetaris tests, and 4 Meterless tests**. The Nightshift tests use a stubbed HTTP response; they do not substitute for a real hotspot request. The Meterless proof completed in the prior audit. The counts describe these commands, not a claim that every public user path has been tested.
 
 | Input designed to trip the reviewer | Observed behavior |
 | --- | --- |

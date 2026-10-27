@@ -250,7 +250,12 @@ function renderAdaptiveInvestigation() {
   const locations = (probe.refs || []).map(ref => ref.zetaris
     ? `${ref.id} · ${ref.zetaris.table} / ${ref.zetaris.key}`
     : `${ref.id} · ${ref.file} row ${ref.row}`);
+  const route = state.nightshift || {};
+  const routeText = route.status === 'used'
+    ? `Nightshift prioritized this question · model ${route.model || 'unknown'} · request ${route.request_id || 'not supplied'}`
+    : 'Nightshift model decision unavailable; Lens used its fixed follow-up order.';
   panel.innerHTML = `<summary><span class="eyebrow">SELECTED FOLLOW-UP · ${escapeHtml(probe.code)}</span><strong>${escapeHtml(label)}</strong></summary><div class="adaptive-body">
+    <p><strong>AI routing:</strong> ${escapeHtml(routeText)}</p>
     <p><strong>Why this probe:</strong> ${escapeHtml(probe.reason)}</p>
     <p>${escapeHtml(probe.observation)}</p>
     <p><strong>Ask the reviewer:</strong> ${escapeHtml(probe.question)}</p>

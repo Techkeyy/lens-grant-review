@@ -97,17 +97,12 @@ panel(s, 8.8, 2.0, 3.85, 3.7, "3  Decide and rerun", "Correct an allocation or w
 txt(s, "Lens raises a question for a reviewer. It does not certify compliance or submit reports.",
     0.76, 6.22, 11.9, 0.45, 15, GRAY)
 
-# 3: actual UI labels from web/index.html and web/app.js, laid out as an editable visual.
-s = base("The reviewer has a complete local workflow", 3,
-         "Interface excerpt recreated with the current labels; capture a live screenshot before submission.")
-rect(s, 0.72, 1.92, 11.9, 4.48, WHITE, True)
-txt(s, "Bring your records together", 1.12, 2.20, 10.6, 0.5, 24, NAVY, True)
-for y, label in [(3.02, "Load sample case"), (3.83, "Import registered Zetaris tables"),
-                 (4.64, "Check both reports"), (5.45, "Questions and supporting records")]:
-    rect(s, 1.12, y, 4.8, 0.58, PALE, True)
-    txt(s, label, 1.36, y + 0.1, 4.3, 0.35, 15, INK, True)
-txt(s, "Review a finding\nSave correction\nRerun check\nDownload review JSON",
-    7.0, 2.92, 4.8, 2.5, 18, INK)
+# 3: actual product capture from the current release, with the synthetic label.
+s = base("The result puts the question before the raw rows", 3,
+         "Actual Lens results screen, synthetic data. A reviewer can inspect evidence and act.")
+s.shapes.add_picture(str(ROOT / "images" / "results-desktop.png"), Inches(0.72), Inches(1.86), height=Inches(4.45))
+panel(s, 8.25, 1.86, 4.38, 4.45, "Review path",
+      "Sign in and open a case.\n\nCheck both reports.\n\nRead the 8-versus-4 question.\n\nCorrect, rerun and export.")
 
 # 4: central evidence card.
 s = base("The answer includes its source and arithmetic", 4,
@@ -118,29 +113,30 @@ panel(s, 8.82, 1.94, 3.8, 3.55, "Evidence", "TS-101\n4 hours on the original tim
 rect(s, 2.35, 5.85, 8.65, 0.76, PALE, True)
 txt(s, "4 + 4 = 8 hours claimed  >  4 hours recorded", 2.55, 5.98, 8.25, 0.48, 22, NAVY, True, PP_ALIGN.CENTER)
 
-# 5: architecture, with the unproven model claim clearly absent.
-s = base("Lens chooses one bounded evidence follow-up", 5,
-         "Deterministic planner and arithmetic; Python HTTP app, SQLite review, browser UI.")
+# 5: current architecture, separating verified evidence from provider readiness.
+s = base("Evidence and model decisions have separate jobs", 5,
+         "Browser UI + Python HTTP server + Supabase saved reviews; no model may rewrite a finding.")
 for x, label, body in [
-    (0.65, "Zetaris", "Query five registered grant tables; retain source IDs, hashes and request IDs"),
-    (4.43, "Lens", "Check cross-grant totals; choose a follow-up from the finding; reread only relevant tables"),
-    (8.21, "Meterless", "Record source, finding and reviewer events in the local reference runtime"),
+    (0.65, "Zetaris data", "Read five registered grant tables; retain source keys, hashes and query IDs."),
+    (4.43, "Lens + Nightshift", "Lens checks arithmetic. A configured Nightshift model prioritizes one bounded follow-up; live proof pending."),
+    (8.21, "World Model", "Meterless reference runtime links source, finding and reviewer events. Supabase saves public reviews."),
 ]:
     panel(s, x, 2.15, 3.55, 3.4, label, body)
-txt(s, "After a correction, the next open finding can trigger a different evidence query.",
+txt(s, "Human correction changes the saved review; the original source remains available.",
     1.0, 6.0, 11.2, 0.54, 19, NAVY, True, PP_ALIGN.CENTER)
 
 # 6: sponsor contribution and honest boundaries.
-s = base("Sponsor tools have jobs in the review", 6,
-         "Five-table import and two adaptive follow-up branches verified against live Zetaris tables; filming pending.")
-panel(s, 0.72, 1.93, 5.85, 4.55, "Zetaris", "Fifteen live requests read five registered tables: 4 timesheets, 1 receipt, 8 activities, and 4 rows from each draft.\n\nThe `OVERALLOCATED_SOURCE` finding retained the timesheet table's source key and snapshot hash.")
-panel(s, 6.77, 1.93, 5.85, 4.55, "Meterless", "The same Lens run wrote a finding ID to the local World Model reference runtime. After app restart, five findings persisted and a fresh Meterless audit returned 39 events.\n\nFilm the restart and human correction on the same review.")
+s = base("Sponsor contribution: proof and remaining gate", 6,
+         "The product combines identified source queries with an event history and a bounded model route.")
+panel(s, 0.6, 1.93, 3.92, 4.55, "Zetaris", "Five registered synthetic grant tables were queried live. Source keys, row counts, snapshot hashes and request IDs stay with the review.")
+panel(s, 4.72, 1.93, 3.92, 4.55, "Meterless Engine", "World Model reference runtime stores linked sources, findings and reviewer actions. A fresh process can rebuild the history.")
+panel(s, 8.84, 1.93, 3.92, 4.55, "Nightshift", "The provider adapter asks a model to prioritize an open question. A real hotspot request and response remain unverified.", AMBER)
 
 # 7: scope, roadmap and close.
 s = base("Give the reviewer a chance to fix the report", 7,
          "Built for a focused review of two grants and one reporting period.")
-panel(s, 0.73, 2.0, 5.84, 3.88, "Current scope", "CSV inputs; cross-grant staff time and receipt allocations; activity-record gaps; human correction or explanation; saved local review; JSON export.")
-panel(s, 6.77, 2.0, 5.84, 3.88, "Next steps", "Funder templates and document imports; accounting connectors; access control for real records; grant-specific reporting rules; collaboration.", AMBER)
+panel(s, 0.73, 2.0, 5.84, 3.88, "Current scope", "Five structured CSV inputs or owner-controlled Zetaris tables; cross-grant allocation checks; activity gaps; Google sign-in; saved reviews; JSON export.")
+panel(s, 6.77, 2.0, 5.84, 3.88, "Next steps", "Funder templates and document imports; accounting connectors; grant-specific reporting terms; collaboration and broader real-record access controls.", AMBER)
 txt(s, "Before a report goes out, see which claims the records support and which need attention.",
     0.86, 6.17, 11.8, 0.6, 20, NAVY, True, PP_ALIGN.CENTER)
 
