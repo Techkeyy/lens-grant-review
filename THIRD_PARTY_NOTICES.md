@@ -11,3 +11,7 @@ The standalone [Meterless/World-Model](https://github.com/Meterless/World-Model)
 ## Supabase JavaScript client
 
 The public Google sign-in flow uses the UMD distribution of [`@supabase/supabase-js`](https://github.com/supabase/supabase-js), version `2.118.0`, saved as [`web/vendor/supabase.js`](web/vendor/supabase.js) from the package's versioned jsDelivr distribution. It is distributed under the MIT License. The full license text is retained at [`web/vendor/SUPABASE_LICENSE`](web/vendor/SUPABASE_LICENSE). The public client uses only the publishable or legacy anonymous key; the service-role key remains server-side.
+
+## Results page fonts
+
+The self-hosted results page uses [Fraunces](https://github.com/undercasetype/Fraunces) and [DM Sans](https://github.com/googlefonts/dm-fonts) WOFF2 font files in `web/fonts/`. Both are distributed under the SIL Open Font License 1.1. Their license and copyright notices are retained at [`web/fonts/OFL-Fraunces.txt`](web/fonts/OFL-Fraunces.txt) and [`web/fonts/OFL-DM-Sans.txt`](web/fonts/OFL-DM-Sans.txt).

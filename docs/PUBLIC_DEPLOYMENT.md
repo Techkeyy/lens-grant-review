@@ -1,6 +1,6 @@
 # Public Lens demo: free-plan deployment plan
 
-This is a deployment plan, not evidence that the public service is live. Use it only after the account-isolation work, security review, and user acceptance test pass. The intended public experience is Google sign-in with reviews saved per account. The current local SQLite database and Meterless files cannot be used as durable storage on a free web host.
+This is the original deployment plan, retained as a setup reference. The [public Lens app](https://lens-grant-review.onrender.com) is live with Google sign-in and saved reviews; the [public UAT record](PUBLIC_UAT_2026-10-26.md) covers one account and a phone check. A separate human two-account isolation test remains outstanding. The current local SQLite database and Meterless files cannot serve as durable storage on a free web host.
 
 ## Services and cost boundary
 

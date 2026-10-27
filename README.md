@@ -1,101 +1,116 @@
 # Lens
 
-Lens helps a small charity's grant reviewer check two draft funder reports against timesheets, receipts, and activity records before those reports go out.
+**Check two draft grant reports against the records behind them before they go to funders.**
 
-> "Do the hours, costs, and workshops in these reports have the records to support them?"
+**[Live app](https://lens-grant-review.onrender.com)** · **[Synthetic sample files](examples/)** · **[Public UAT record](docs/PUBLIC_UAT_2026-10-26.md)**
 
-Lens is a grant review workspace for the Open Agent Hackathon 2026, Track 02, *The Agent That Can Explain Why*. It raises questions for a person to investigate. It does not certify compliance, detect fraud, or submit a report to a funder.
+Lens is for the person at a small charity who prepares or reviews funder reports. Receipts, timesheets, activity notes, and draft claims can look reasonable separately. Lens brings linked records together, shows where the evidence fits or falls short, and leaves the decision with that person.
 
-## Public deployment status
+> “Do these reported hours, costs, and sessions have records to support them?”
 
-The source is published at [Techkeyy/lens-grant-review](https://github.com/Techkeyy/lens-grant-review). A Free Render service has been created at [lens-grant-review.onrender.com](https://lens-grant-review.onrender.com). The Docker image built successfully, but the service is intentionally closed until its Supabase credentials are set in Render. Google sign-in and the live two-account user acceptance test are still pending. Do not treat the public URL as a finished demo until that test passes.
+Built for the Open Agent Hackathon 2026, Track 02: *The Agent That Can Explain Why*. Lens raises sourced questions; it does not accuse anyone of wrongdoing, certify compliance, or send a report.
 
-## Why shared allocation matters
+## Why this exists
 
-A four-hour timesheet entry charged as four hours to each of two grants needs review: the claims total eight hours against one four-hour source. A two-hour allocation to each grant can be valid. The same distinction applies to a receipt split between grants. Lens uses stable source IDs and source locations to show the calculation. Similar names without a reliable link stay in review rather than becoming an invented match.
+Two reports can each claim four hours from the same four-hour timesheet. Looking at either report alone misses the overlap. A legitimate two-hour split across the reports should also be recognized.
 
-## Current workflow
+```text
+Reading Futures draft       4 hours ─┐
+                                      ├── Timesheet TS-101: 4 hours recorded
+Community Learning draft    4 hours ─┘
+                         8 claimed in total → check the split
+```
 
-1. **Import** two draft report CSVs, a timesheet CSV, a receipts CSV, and an activity log CSV. Lens validates the supported fields and keeps row locations.
-2. **Link** ambiguous report claims or activity records to their sources through the interface. Lens does not silently choose a person or source.
-3. **Check** both reports. Deterministic reconciliation compares each claim with the source and totals allocations across grants. Lens then selects one bounded follow-up: an overallocated timesheet prompts a reread of the timesheet and both draft reports; otherwise an activity support gap prompts a reread of the activity register. The reread is compared with the original import snapshot, never with a locally edited claim.
-4. **Review** questions beside the affected claims, source rows, and arithmetic. The selected follow-up shows its reason, table names, source references, request IDs, outcome, and next human question. Open **Inspect the investigation steps** for the executed timeline. A changed or unavailable Zetaris source cannot be live-confirmed and should be reimported. Local CSV reviews are labelled snapshot-only. A workshop gap means supplied evidence is missing; it does not prove the workshop never happened.
-5. **Correct or explain** a finding, then rerun. Lens saves the review in local SQLite and records source, finding, and human-decision events in the Meterless World Model reference runtime. An explanation is a human note, not an automatic clearance.
-6. **Reopen or export** the saved review. The current check's execution trace remains in local SQLite and is included in the internal JSON export; a rerun replaces the previous check steps while retaining the import steps.
+The link to the original row matters as much as the calculation. Lens uses source IDs and row locations to show its basis. When a source identity is uncertain, it asks a reviewer to confirm it rather than treating a similar name as proof.
 
-The included [sample case](examples/synthetic_case.json) is synthetic and labelled as such in the interface. It includes an overallocated timesheet, valid proportional splits, and an activity evidence gap.
+## What a reviewer does
 
-The timeline captures steps only when they run; it is not a model thought log. The planner is deterministic and chooses one allowlisted follow-up from current findings, with no model-authored SQL or automatic source linking. Reviews saved before the timeline was added will show new check steps after a rerun, but need a fresh Zetaris import to show import query receipts. A fresh import replaces the current local review; export anything you want to keep first.
+1. **Starts a review.** Sign in with Google on the public app, create a saved review, then open the labelled synthetic example or upload the five supported CSVs.
+2. **Checks the links.** Confirm uncertain report-to-source or activity links before relying on them.
+3. **Runs the check.** Lens compares claims with timesheets, receipts, and linked activity records. It totals allocations that share a source across both grants.
+4. **Reads a question.** Each finding leads with a plain-language comparison and next step. The exact imported rows and investigation history remain available.
+5. **Makes a decision.** Change an allocation amount or save an explanation, then rerun. A note does not clear a gap by itself.
+6. **Keeps the result.** Reopen the review after sign-in or download its JSON record, including current questions, corrections, explanations, and source references.
 
-## Run locally on Windows
+Corrections change the **Lens review**, not the uploaded CSV or the charity’s original funder report. The reviewer must update that report separately before sending it.
 
-Requirements: Python 3.11 or newer and Node.js 24. No Python packages or npm packages need to be installed for the current local path. Node's built-in TypeScript type transform is used by the Meterless bridge.
+### Try the synthetic case
 
-From a PowerShell terminal in the project folder:
+Open the [live app](https://lens-grant-review.onrender.com), sign in, choose **Open synthetic case**, then **Check both reports**. The invented case starts with three questions and two checks whose totals fit the supplied evidence:
+
+| What Lens finds | What it means |
+| --- | --- |
+| Two reports claim 4 hours each against one 4-hour timesheet | Review the allocation; Lens cannot know which draft amount is wrong. |
+| 10 sessions reported, 8 linked activity records | Two sessions lack supplied support; this does not prove they never happened. |
+| One staff-time claim has two plausible timesheet matches | Confirm source identity before treating either match as evidence. |
+| A shared 4-hour timesheet is split 2 + 2 | The linked total fits the recorded hours. |
+
+Change the two 4-hour claims to 2 hours each and rerun. The shared-timesheet question moves to the checks that fit, while the 10-versus-8 activity gap remains. The [public UAT record](docs/PUBLIC_UAT_2026-10-26.md) documents Google sign-in, saved correction, rerun, explanation, JSON export, refresh, sign-out/in, and a phone check. That record covers one real account; a separate human two-account isolation test has not been recorded.
+
+## Run locally
+
+Use Python 3.11+ and Node.js 24. The local path has no pip or npm installation step: the Meterless reference runtime is included.
+
+In PowerShell:
 
 ```powershell
-python --version
-node --version
+git clone https://github.com/Techkeyy/lens-grant-review.git
+cd lens-grant-review
 python app.py
 ```
 
-Open `http://127.0.0.1:8765` and choose **Load sample case**. Then check both reports, open a finding, correct the duplicated time allocation, rerun, refresh, and reopen the saved review. To use your own supported CSVs, upload the five files shown in the form. The [sample CSVs](examples/) show the required columns. Loading a different case replaces the current local review, so export a review you want to retain first.
+Open `http://127.0.0.1:8765` and choose **Open synthetic case**. The server binds to localhost by default. Local reviews and Meterless state are written under ignored `data/`. To bring your own records, use the five CSV slots shown in the app; [`examples/`](examples/) contains the required headers and invented records. Importing another case replaces the current case in that review, so export a copy first if needed.
 
-In local mode, records and review history are written under `data/`, which Git ignores. The legacy local review remains single-user and binds only to `127.0.0.1`. The backend also supports separate named reviews. A public bind requires configured Supabase authentication and per-account storage. Google sign-in and the saved-review interface are implemented locally; the deployed two-account journey still requires UAT. Do not put real charity or donor records into a publicly reachable instance until the public user flow and privacy controls pass UAT.
+For the public service, the server requires Supabase configuration and Google sign-in. The private service-role key belongs only in the server environment. See [public deployment](docs/PUBLIC_DEPLOYMENT.md) and the [database schema](docs/lens_reviews.sql).
 
-## Public review backend (under development)
+## How the evidence is handled
 
-The public backend verifies each bearer token with Supabase Auth, derives the owner ID from that response, and stores each named review in Supabase Postgres. Review JSON and Meterless event history are saved in the same row, so an ephemeral web host can restore both after sleep or redeploy. An `owner_id` filter is applied to every server read and update. Browser roles have no direct table privileges or Row Level Security policies, preventing them from replacing saved state outside the Lens API. Writes use a row version check so a stale tab receives a conflict instead of silently overwriting a newer review. The service-role key remains server-only.
+Lens reconciles deterministically. It sums claims linked to the same source, checks units and reporting periods, counts distinct linked activity rows, and leaves missing or ambiguous evidence open. A bounded investigator can choose one allowlisted, read-only follow-up. It does not author arbitrary SQL or choose a person from a similar name.
 
-The database schema is [docs/lens_reviews.sql](docs/lens_reviews.sql). Set `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` in the private server environment. `GET /api/config` returns only the URL and browser-safe anon key; it never returns the service-role key. Public API calls require `Authorization: Bearer <Supabase access token>`. `GET /api/reviews` lists the authenticated account's reviews; `POST /api/reviews` with `{ "title": "..." }` creates one. `GET /api/state`, `/api/integrations`, and `/api/export` take `review_id` in the query string; existing POST actions take it in the JSON body. Other accounts' review IDs return 404. The public service caps each account at 5 saved reviews, five CSV files at 100 KB combined and 200 data rows per file, and each review with its Meterless history at 750 KB. Import/check actions are limited to 12 per account and 60 globally per five minutes in the one server process; a second import or check on the same review receives 409. Meterless and Zetaris calls each run one at a time to bound memory use. Rate and busy limits return 429; size limits return 413. These in-process limits are sized for one free Render instance, not a distributed deployment. The public Zetaris demo import is restricted to the account ID configured as `LENS_ZETARIS_DEMO_OWNER_ID` and uses only the owner's synthetic tables. See [the public deployment plan](docs/PUBLIC_DEPLOYMENT.md) and [UAT plan](docs/PUBLIC_UAT.md); neither document proves deployment has happened.
+The public sample and ordinary CSV uploads are checked from their imported snapshot. The review labels this path as having **no live Zetaris grant-data query for that review**. An owner-controlled Zetaris path can read five registered synthetic grant tables into a captured snapshot and requery selected sources; it was exercised locally with a live cluster. Public Zetaris import is restricted to the configured demo owner. [Zetaris setup and proof](zetaris/README.md) documents its tables, settings, and read-only checks.
 
-## Test and sponsor proof
+Lens records source, finding, and human-decision events using the included Meterless World Model reference runtime. In the public service, that history is saved with the account’s review. [Meterless implementation and proof](meterless/README.md) explains the reference integration and its limits.
 
-From the project root:
+| Module | Job |
+| --- | --- |
+| `web/` | Guide import, review, correction, rerun, and export. |
+| `app.py` | Serve the HTTP flow and preserve review state. |
+| `accounts.py` | Verify public sessions and scope saved reviews to an owner. |
+| `lens_core.py` | Reconcile claims and produce sourced findings. |
+| `lens_investigator.py` | Select one bounded follow-up or abstain. |
+| `zetaris/` | Read configured grant tables and preserve query receipts. |
+| `meterless/` | Store linked source, finding, and human-decision events. |
+| `examples/` | Show the supported CSV shape with invented records. |
+
+## Checks and boundaries
+
+Run the repository checks from its root:
 
 ```powershell
 python -m unittest discover -s tests -v
 python -m unittest zetaris.test_client zetaris.test_raw_evidence -v
-```
-
-From `meterless/`:
-
-```powershell
+cd meterless
 npm test
 npm run proof
-$env:WORLD_MODEL_IMPL=(Resolve-Path .\meterless\vendor\src\index.ts).Path
-node --experimental-transform-types .\vendor\conformance\runner.ts
 ```
 
-The Python tests cover reconciliation, the HTTP journey, and the bounded investigator's branch choice, stale-source abstention, and unavailable-source behavior. The Meterless tests exercise real reference-runtime state across independent processes. Live Zetaris evidence is described separately from local tests. See [Meterless details](meterless/README.md) and [Zetaris setup](zetaris/README.md) for the integration paths and exact proof commands.
+The tests exercise over-allocation, valid proportional splits, missing activity support, ambiguous identity, changed-source abstention, invalid import recovery, account ownership checks, and a saved correction followed by rerun. The Meterless proof runs against its included reference runtime; it is not a hosted production service. See [`tests/`](tests/) and [`zetaris/`](zetaris/).
 
-Zetaris requires five registered Lens grant tables and these local environment variables: `ZETARIS_BASE_URL` (the cluster UI origin), `ZETARIS_API_KEY`, numeric `ZETARIS_ORG_ID`, `ZETARIS_TIMESHEETS_TABLE`, `ZETARIS_RECEIPTS_TABLE`, `ZETARIS_ACTIVITY_TABLE`, `ZETARIS_REPORT_A_TABLE`, and `ZETARIS_REPORT_B_TABLE`. Keep the key out of Git. After registration, run `python -m zetaris.smoke` for aggregate diagnostics, then use **Import registered Zetaris tables** in the app to capture complete identified rows. Any missing or partial table read prevents import. See [Zetaris setup](zetaris/README.md) for the registration and read path.
+On 26 October 2026, these commands passed **31 application tests, 13 Zetaris tests, and 4 Meterless tests**; the Meterless proof also completed. The counts describe these commands, not a claim that every public user path has been tested.
 
-**Status as of 24 October 2026:** The local interface, deterministic checks, SQLite review state, and Meterless reference-runtime bridge work. The user's AWS-backed Zetaris Mini cluster hosts all five synthetic Lens CSVs as registered file tables. A live read-only import returned 4 timesheets, 1 receipt, 8 activities, and 4 rows from each of the two report drafts. Through the local HTTP app, that import and a subsequent check produced an `OVERALLOCATED_SOURCE` finding linked to `LENS_DEMO_FILES.timesheets`, a source key, and a snapshot hash; Meterless ingested the records and finding. A later isolated live HTTP run verified the adaptive follow-up: the initial allocation finding reread the timesheet and both report tables with three Zetaris request IDs; after a local correction, the next check reread the activity table with one request ID. Both follow-ups matched the imported snapshot. The table names differ slightly from the CSV names, so use [the verified mapping](zetaris/README.md). During development in Cursor, its Agent added the Zetaris evidence snapshot panel to `web/`. Lens saves an execution timeline and conditionally chooses one further evidence probe. This is a bounded deterministic investigation, not model-driven reasoning. A filmed demonstration and public GitHub submission remain incomplete.
-
-## Architecture
-
-| Module | Job |
+| Input designed to trip the reviewer | Observed behavior |
 | --- | --- |
-| `web/` | Render the local import, check, correction, and review interface. |
-| `app.py` | Validate imports, serve the API, and save local review state. |
-| `lens_core.py` | Reconcile claims deterministically against canonical source records. |
-| `lens_investigator.py` | Select and verify one bounded, read-only follow-up against the imported Zetaris snapshot. |
-| `zetaris/` | Query registered evidence tables through the documented SQL Editor API. |
-| `meterless/` | Preserve source, finding, and human-decision history in the reference runtime. |
-| `examples/` | Provide a labelled synthetic case and supported CSV format. |
-| `tests/` | Exercise reconciliation boundaries and the local HTTP journey. |
+| The same four staff hours claimed in full twice | An over-allocation question links both claims and the timesheet. |
+| Two claims split the four hours 2 + 2 | Their linked total fits the source. |
+| Two nearly matching staff names | Lens leaves source identity unconfirmed. |
+| Ten claimed sessions with eight linked rows | The evidence gap stays open, even after a human note. |
+| Malformed replacement import | The previous saved review is retained. |
+| Zetaris source changes after import | Live confirmation abstains instead of rewriting the imported finding. |
 
-## Boundaries
+**Unresolved evidence does not become a clear verdict.** Lens checks only records supplied or explicitly linked. It does not determine a funder’s policy, edit activity counts inside Lens, import PDFs, connect to an accounting system, or submit the finished report.
 
-- A valid shared allocation is accepted when the total fits the source quantity; the app does not decide each funder's policy for you.
-- Missing source IDs, incompatible units or periods, and uncertain identity links produce review states rather than a false clear verdict.
-- Findings depend on the records supplied. Lens cannot prove an event did not happen just because its log entry is absent.
-- The local SQLite store and Meterless reference runtime are intended for a single-user demonstration. They do not provide production access control or concurrent-write safety.
-- Sponsor availability is surfaced separately from local reconciliation. Local arithmetic is never presented as Zetaris output.
-
-The [product contract](docs/PRODUCT_CONTRACT.md), [research ledger](docs/RESEARCH_LEDGER.md), and [build plan](docs/BUILD_PLAN.md) record scope and remaining proof gates.
+The public review uses Google sign-in and Supabase-backed saved state. Automated tests cover owner scoping and stale-write conflicts. A human cross-account isolation check and a real-organization records trial are outside the documented UAT coverage.
 
 ## Third-party code and license
 
-The `meterless/vendor/` reference and conformance files come from [Meterless/Meterless](https://github.com/Meterless/Meterless) at commit `1742dec56a66e58eef9dda2d2b865823758ca8cd` and retain the [Apache 2.0 license](meterless/vendor/LICENSE). See [third-party attribution](THIRD_PARTY_NOTICES.md). A license for the Lens-authored source has not yet been selected.
+The included Meterless reference and conformance code is from [Meterless/Meterless](https://github.com/Meterless/Meterless) and retains its [Apache 2.0 license](meterless/vendor/LICENSE). The results page fonts retain their SIL Open Font License notices. [Third-party notices](THIRD_PARTY_NOTICES.md) list their provenance. No license has been selected for Lens-authored source.

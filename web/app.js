@@ -205,7 +205,7 @@ function arithmetic(finding) {
   return Object.entries(a).map(([key,value]) => `${escapeHtml(key)}: ${escapeHtml(Array.isArray(value)?value.join(', '):value)}`).join(' · ');
 }
 
-function findingHtml(finding, open=false) {
+function findingHtml(finding, open=false, ordinal=1) {
   const currentClaims = finding.claims.map(ref => {
     const claim = state.case.claims.find(item => item.id === ref.id);
     return claim ? `<div class="evidence-entry"><strong>Current ${escapeHtml(claim.grant)} claim</strong>${escapeHtml(claim.id)}: ${escapeHtml(claim.quantity)} ${escapeHtml(claim.unit)}${claim.kind === 'activity_count' ? ` · linked using ${escapeHtml(claim.evidence_link_method || 'explicit evidence IDs')}` : ''}</div>` : '';
@@ -217,7 +217,7 @@ function findingHtml(finding, open=false) {
   const note = finding.human_explanation;
   const status = ({needs_correction:'Needs correction',needs_evidence:'Needs evidence',needs_review:'Needs review',clear:'Totals fit'})[finding.status] || finding.status.replaceAll('_',' ');
   return `<details class="finding ${escapeHtml(finding.status)}" name="lens-finding" data-key="${escapeHtml(finding.key)}" ${open ? 'open' : ''}>
-    <summary><div class="finding-head"><div><h3>${escapeHtml(title(finding))}</h3><p class="finding-summary">${escapeHtml(plainFinding(finding))}</p></div><span class="badge">${escapeHtml(status)}</span></div><svg class="icon" aria-hidden="true"><use href="#icon-chevron"></use></svg></summary>
+    <summary><span class="finding-number" aria-hidden="true">${String(ordinal).padStart(2,'0')}</span><div class="finding-head"><div><h3>${escapeHtml(title(finding))}</h3><p class="finding-summary">${escapeHtml(plainFinding(finding))}</p></div><span class="badge">${escapeHtml(status)}</span></div><svg class="icon" aria-hidden="true"><use href="#icon-chevron"></use></svg></summary>
     <div class="finding-body"><div class="finding-work"><div class="finding-story"><p class="eyebrow">What we found</p><p class="finding-lead">${escapeHtml(plainFinding(finding))}</p>${comparison(finding)}</div>
     <aside class="decision-panel"><p class="eyebrow">WHAT YOU CAN DO</p><p class="reviewer-step">${escapeHtml(reviewerStep(finding))}</p>
       ${note ? `<p class="human-note" tabindex="-1"><strong>Explanation saved</strong><br>${escapeHtml(note.text)}<br><small>Source revision ${escapeHtml(note.source_revision)}. This note does not clear the question.</small></p>` : ''}
@@ -327,10 +327,16 @@ function render() {
     const currentKeys = new Set(state.result.findings.map(item => item.key));
     const openKeys = new Set([...document.querySelectorAll('.finding[open]')].map(item => item.dataset.key).filter(key => currentKeys.has(key)));
     const firstQuestion = state.result.findings.findIndex(item => item.status !== 'clear');
-    $('#finding-list').innerHTML = state.result.findings.map((finding,index) => findingHtml(finding, openKeys.has(finding.key) || (!openKeys.size && index === (firstQuestion < 0 ? 0 : firstQuestion)))).join('');
+    $('#finding-list').innerHTML = state.result.findings.map((finding,index) => findingHtml(finding, openKeys.has(finding.key) || (!openKeys.size && index === (firstQuestion < 0 ? 0 : firstQuestion)), index + 1)).join('');
     const open = state.result.findings.filter(item => item.status !== 'clear').length;
     const clear = state.result.findings.length - open;
-    $('#finding-summary').innerHTML = `<strong>${open} ${open === 1 ? 'question' : 'questions'} to review</strong><span>${clear} ${clear === 1 ? 'check' : 'checks'} fit the supplied evidence</span>`;
+    $('#results-title').textContent = open
+      ? `${open} ${open === 1 ? 'question' : 'questions'} to check before you send.`
+      : 'No open questions in these records.';
+    $('#results .panel-heading p:last-child').textContent = open
+      ? 'Open a question to compare the claim with its supporting record, then choose what to do.'
+      : 'No open questions appeared in this check. You can still inspect each original row before exporting.';
+    $('#finding-summary').innerHTML = `<div class="tally-open"><span>Questions to settle</span><strong>${open}</strong><p>Check these before the funder report goes out.</p></div><div class="tally-clear"><span>Amounts that fit</span><strong>${clear}</strong><p>These linked totals match the supplied records.</p></div>`;
   }
   const m = state.meterless || {status:'unknown'};
   $('#integration-status').textContent = `Review history: Meterless ${m.status}${m.event_count === undefined ? '' : ` · ${m.event_count} events`}. Analysis: local deterministic reconciliation. Zetaris grant-data query: ${state.zetaris ? 'five tables captured for this review; snapshot hashes and request IDs saved. Tables were not transactionally frozen.' : 'not connected to this review.'}`;
