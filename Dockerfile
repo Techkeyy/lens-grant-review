@@ -14,7 +14,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     LENS_PUBLIC_MODE=1
 
 WORKDIR /app
-COPY app.py accounts.py lens_core.py lens_investigator.py ./
+COPY app.py accounts.py lens_core.py lens_investigator.py nightshift.py ./
 COPY web/ ./web/
 COPY examples/ ./examples/
 COPY zetaris/ ./zetaris/
