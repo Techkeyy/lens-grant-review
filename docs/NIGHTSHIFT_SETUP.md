@@ -4,7 +4,7 @@ Lens's only model-provider adapter is [`nightshift.py`](../nightshift.py). It us
 
 ## Current hardware and proof status
 
-The development PC reports **Intel HD Graphics 620** and no dedicated NVIDIA/AMD GPU. Meterless says its [Windows Nightshift edition](https://meterless.ai/windows.html) needs a dedicated GPU. The [free web edition](https://github.com/Meterless/Meterless/blob/main/README.md) has no app-provider hotspot. No live Nightshift request has been completed or deployed for Lens as of 27 October 2026. The code and mocked tests are preparation, not a completed hackathon requirement.
+The development PC reports **Intel HD Graphics 620** and no dedicated NVIDIA GPU. Meterless's [Windows edition](https://meterless.ai/windows.html) lists an NVIDIA CUDA GPU. The [Participant Setup Guide, pages 17–20](https://hackathon-server.genai.works/api/v1/cdn/proxy/hackathon/7e1b7ca3995b4673b30a73555c87e71f.pdf), calls for an installed, running Nightshift Runtime/API hotspot and says the free browser experience should not be assumed to expose one. No live Nightshift request has been completed or deployed for Lens as of 27 October 2026. The code and mocked tests are preparation, not a completed hackathon requirement.
 
 ## When a supported runtime is available
 
